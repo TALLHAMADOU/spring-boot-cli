@@ -153,6 +153,6 @@ tasks.named('test') {
 
 func init() {
 	installCmd.Flags().StringVarP(&installName, "name", "n", "my-spring-project", "project name")
-	installCmd.Flags().StringVarP(&installPackage, "package", "p", "com.example", "base package (group id)")
+	installCmd.Flags().StringVarP(&installPackage, "package", "p", "", "base package (group id)")
 	rootCmd.AddCommand(installCmd)
 }

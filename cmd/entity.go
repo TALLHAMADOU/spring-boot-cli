@@ -14,6 +14,7 @@ var (
 	entityFields   string
 	entityLombok   bool
 	entityAuditing bool
+	entityPackage  string
 )
 
 var entityCmd = &cobra.Command{
@@ -28,10 +29,22 @@ var entityCmd = &cobra.Command{
 		}
 		name := exportName(raw)
 
-		pkg := "com.example"
-		// try to read package from install flag if available
+		// detect base package from project files (pom.xml / build.gradle)
+		detected := detectBasePackage(".")
+		pkg := detected
+		// installPackage (from install command) has priority over detected
 		if installPackage != "" {
 			pkg = installPackage
+		}
+		// explicit --package flag for this command overrides everything
+		if entityPackage != "" {
+			pkg = entityPackage
+		}
+
+		// ensure we are in a Spring Boot project
+		if !isSpringProject(".") {
+			fmt.Fprintln(os.Stderr, "Erreur: Lancez dans un projet Spring Boot avec pom.xml ou build.gradle")
+			os.Exit(1)
 		}
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "entity")
@@ -114,6 +127,11 @@ var entityCmd = &cobra.Command{
 			addLombokToProject(".")
 		}
 
+		// ensure JPA dependency exists for entity generation (if pom/build.gradle present)
+		if err := ensureJPAInProject("."); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to ensure JPA dependency: %v\n", err)
+		}
+
 		fmt.Printf("Created entity: %s\n", filePath)
 	},
 }
@@ -122,6 +140,7 @@ func init() {
 	entityCmd.Flags().StringVar(&entityFields, "fields", "", "comma-separated fields like name:String,age:int")
 	entityCmd.Flags().BoolVar(&entityLombok, "lombok", false, "use Lombok annotations instead of getters/setters")
 	entityCmd.Flags().BoolVar(&entityAuditing, "auditing", false, "add createdAt/updatedAt auditing fields")
+	entityCmd.Flags().StringVar(&entityPackage, "package", "", "base package override (e.g. com.example.app)")
 	makeCmd.AddCommand(entityCmd)
 }
 

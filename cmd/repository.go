@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var repositoryPackage string
+
 var repositoryCmd = &cobra.Command{
 	Use:   "repository [name]",
 	Short: "Generate a JpaRepository interface for an entity",
@@ -21,10 +23,12 @@ var repositoryCmd = &cobra.Command{
 		}
 		name := exportName(raw)
 
-		pkg := "com.example"
-		if installPackage != "" {
-			pkg = installPackage
+		if !isSpringProject(".") {
+			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			os.Exit(1)
 		}
+
+		pkg := getEffectivePackage(".", installPackage, repositoryPackage)
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "repository")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -46,4 +50,5 @@ var repositoryCmd = &cobra.Command{
 
 func init() {
 	makeCmd.AddCommand(repositoryCmd)
+	repositoryCmd.Flags().StringVarP(&repositoryPackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
 }

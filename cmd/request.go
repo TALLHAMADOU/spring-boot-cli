@@ -10,6 +10,7 @@ import (
 )
 
 var requestFields string
+var requestPackage string
 
 var requestCmd = &cobra.Command{
 	Use:   "request [name]",
@@ -23,10 +24,12 @@ var requestCmd = &cobra.Command{
 		}
 		name := exportName(raw)
 
-		pkg := "com.example"
-		if installPackage != "" {
-			pkg = installPackage
+		if !isSpringProject(".") {
+			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			os.Exit(1)
 		}
+
+		pkg := getEffectivePackage(".", installPackage, requestPackage)
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "request")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -70,5 +73,6 @@ var requestCmd = &cobra.Command{
 
 func init() {
 	requestCmd.Flags().StringVar(&requestFields, "fields", "", "fields like name:String,age:int")
+	requestCmd.Flags().StringVarP(&requestPackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
 	makeCmd.AddCommand(requestCmd)
 }

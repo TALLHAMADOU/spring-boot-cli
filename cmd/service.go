@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var servicePackage string
+
 var serviceCmd = &cobra.Command{
 	Use:   "service [name]",
 	Short: "Generate a service interface and implementation",
@@ -20,10 +22,12 @@ var serviceCmd = &cobra.Command{
 			return
 		}
 		name := exportName(raw)
-		pkg := "com.example"
-		if installPackage != "" {
-			pkg = installPackage
+		if !isSpringProject(".") {
+			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			os.Exit(1)
 		}
+
+		pkg := getEffectivePackage(".", installPackage, servicePackage)
 
 		entityName, _ := cmd.Flags().GetString("entity")
 
@@ -64,4 +68,5 @@ var serviceCmd = &cobra.Command{
 func init() {
 	makeCmd.AddCommand(serviceCmd)
 	serviceCmd.Flags().StringP("entity", "e", "", "associate service with an entity (generate entity-backed methods)")
+	serviceCmd.Flags().StringVarP(&servicePackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
 }

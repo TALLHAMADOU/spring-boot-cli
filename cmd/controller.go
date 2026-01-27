@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var controllerPackage string
+
 var controllerCmd = &cobra.Command{
 	Use:   "controller [name]",
 	Short: "Generate a REST controller",
@@ -21,10 +23,12 @@ var controllerCmd = &cobra.Command{
 		}
 		name := exportName(raw)
 
-		pkg := "com.example"
-		if installPackage != "" {
-			pkg = installPackage
+		if !isSpringProject(".") {
+			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			os.Exit(1)
 		}
+
+		pkg := getEffectivePackage(".", installPackage, controllerPackage)
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "controller")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -70,6 +74,7 @@ var controllerCmd = &cobra.Command{
 func init() {
 	controllerCmd.Flags().Bool("crud", false, "generate CRUD endpoints")
 	controllerCmd.Flags().String("entity", "", "entity name to use for CRUD (required with --crud)")
+	controllerCmd.Flags().StringVarP(&controllerPackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
 	makeCmd.AddCommand(controllerCmd)
 }
 

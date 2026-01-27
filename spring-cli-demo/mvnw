@@ -1,7 +1,0 @@
-#!/bin/sh
-if command -v mvn >/dev/null 2>&1; then
-  mvn "$@"
-else
-  echo "Maven not found. Install Maven or use a machine with Maven."
-  exit 1
-fi

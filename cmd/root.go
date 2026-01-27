@@ -1,16 +1,14 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 )
-
-
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -36,6 +34,10 @@ func Execute() {
 	}
 }
 
+// Version is set at build time using -ldflags "-X 'github.com/your/module/cmd.Version=1.2.3'"
+var Version = "dev"
+var showVersion bool
+
 func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -46,6 +48,16 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	// use Cobra's built-in Version handling for `--version`
+	rootCmd.Version = Version
+
+	// add short `-v` alias to show the CLI version (avoids conflicting with `version` subcommand)
+	rootCmd.PersistentFlags().BoolVarP(&showVersion, "cli-version", "v", false, "show spring-cli version")
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		if showVersion {
+			fmt.Printf("spring-cli %s\n", Version)
+			os.Exit(0)
+		}
+	}
 }
-
-

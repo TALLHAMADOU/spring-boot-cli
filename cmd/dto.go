@@ -10,6 +10,7 @@ import (
 )
 
 var dtoFields string
+var dtoPackage string
 
 var dtoCmd = &cobra.Command{
 	Use:   "dto [name]",
@@ -23,10 +24,12 @@ var dtoCmd = &cobra.Command{
 		}
 		name := exportName(raw)
 
-		pkg := "com.example"
-		if installPackage != "" {
-			pkg = installPackage
+		if !isSpringProject(".") {
+			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			os.Exit(1)
 		}
+
+		pkg := getEffectivePackage(".", installPackage, dtoPackage)
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "dto")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -72,5 +75,6 @@ var dtoCmd = &cobra.Command{
 
 func init() {
 	dtoCmd.Flags().StringVar(&dtoFields, "fields", "", "fields like name:String,age:int")
+	dtoCmd.Flags().StringVarP(&dtoPackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
 	makeCmd.AddCommand(dtoCmd)
 }
