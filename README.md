@@ -180,6 +180,5 @@ Merci d'utiliser `spring-cli`. Dites-moi si vous préférez un style différent 
 
  Voir le fichier `LICENSE` pour les détails.
 
- Merci d'utiliser `spring-cli` — dites-moi si vous voulez que j'ajoute des captures d'écran, des exemples de templates Java plus riches, ou de la documentation générée.
-go build -ldflags "-X 'github.com/hamadoutall/spring-cli/cmd.Version=0.0.0'" -o spring-cli .
-
+ Merci d'utiliser `spring-cli` 
+ 
