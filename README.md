@@ -3,154 +3,160 @@
 Un petit CLI pour générer rapidement des composants Spring Boot (entities, services, repositories, etc.).
 
 Installation (binaire global)
+# spring-cli
 
-- Avec Go (machine de développement) :
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![go](https://img.shields.io/badge/go-1.25+-00ADD8)
+
+### Résumé
+
+`spring-cli` est un petit outil en Go pour générer rapidement des composants Spring Boot (entités JPA, repositories, services, controllers, DTOs, tests) et pour gérer simplement la version d'un projet Maven/Gradle.
+
+---
+
+## Table des matières
+
+- [Installation](#installation)
+- [Utilisation rapide](#utilisation-rapide)
+- [Commandes principales](#commandes-principales)
+- [Versioning](#versioning)
+- [Exemples : création de projet (Maven / Gradle)](#exemples--cr%C3%A9ation-de-projet-maven--gradle)
+- [Contribuer](#contribuer)
+- [Licence](#licence)
+
+---
+
+## Installation
+
+1) Depuis les sources (machine de développement)
 
 ```bash
+git clone <votre-fork>
+cd Spring-CLi
 go build -o spring-cli .
-# puis déplacer le binaire dans un dossier du PATH, par ex:
+# déplacer le binaire dans votre PATH
 sudo mv spring-cli /usr/local/bin/
 ```
 
-- Utiliser les releases (Linux/macOS/Windows) :
-  - Télécharger l'archive depuis les releases GitHub et placer le binaire dans un dossier du `PATH`.
-
-Utilisation
-
-- Générer une entité dans le dossier courant (ne modifie que le projet courant) :
+2) Compiler en intégrant une version (pour releases)
 
 ```bash
-cd mon-projet-spring
-spring-cli make entity User --fields "name:String,age:int"
+go build -ldflags "-X 'github.com/hamadoutall/spring-cli/cmd.Version=1.2.3'" -o spring-cli .
 ```
 
-- Générer un service lié à une entité :
+3) Utiliser les releases GitHub
 
-***
-# spring-cli
- # spring-cli
+Téléchargez l'archive depuis les releases et placez le binaire dans un dossier présent dans votre `PATH`.
 
- ![license](https://img.shields.io/badge/license-MIT-blue)
+4) Publier avec `goreleaser`
 
-    ____                  _             ____ _     _
-   / ___| _ __   ___  ___| |_ ___ _ __ / ___| |__ (_)_ __   __ _
-   \___ \| '_ \ / _ \/ __| __/ _ \ '__| |   | '_ \| | '_ \ / _` |
-    ___) | |_) |  __/ (__| ||  __/ |  | |___| | | | | | | | | | (_| |
-   |____/| .__/ \___|\___|\__\___|_|   \____|_| |_|_|_| |_|\__, |
-         |_|                                                |___/
+Le dépôt contient `goreleaser.yml`. Pour publier :
 
- Un outil CLI pour générer rapidement des composants Spring Boot (entités JPA, repositories, services, controllers, DTOs, tests) et aider le versioning pour projets Maven/Gradle.
+```bash
+goreleaser release --rm-dist
+```
 
- ## Table des matières
- - Introduction
- - Installation
- - Utilisation rapide
- - Commandes et flags
- - Versioning
- - Exemples : création de projet (Maven/Gradle)
- - Contribuer
- - Licence
+---
 
- ## Introduction
+## Utilisation rapide
 
- Ce CLI s'installe globalement et s'utilise depuis n'importe quel dossier projet. Toutes les opérations modifient uniquement le dossier courant et visent à accélérer la génération de code répétitif.
+Exemples depuis la racine d'un projet Spring :
 
- ## Installation
+```bash
+# créer un projet Maven minimal
+spring-cli install:project maven --name testproj --package com.example.test
 
- 1) Depuis les sources (machine de développement)
+# créer un projet Gradle minimal
+spring-cli install:project gradle --name testproj --package com.example.test
 
- ```bash
- git clone <votre-fork>
- cd Spring-CLi
- go build -o spring-cli .
- # déplacer le binaire dans votre PATH
- sudo mv spring-cli /usr/local/bin/
- ```
+# générer une entité User
+spring-cli make entity User --fields "name:String,age:int"
 
- 2) Compiler en intégrant une version (pour releases)
+# générer repository/service/controller pour User
+spring-cli make repository User
+spring-cli make service User --entity User
+spring-cli make controller User --entity User --crud
 
- ```bash
- go build -ldflags "-X 'github.com/hamadoutall/spring-cli/cmd.Version=1.2.3'" -o spring-cli .
- ```
+# afficher / modifier la version
+spring-cli version
+spring-cli version --bump minor
+spring-cli version --set 0.2.0
+```
 
- 3) Utiliser les releases GitHub
+---
 
- Téléchargez l'archive depuis les releases et placez le binaire dans un dossier présent dans votre `PATH`.
+## Commandes principales
 
- 4) Publier avec `goreleaser`
+- `install:project <maven|gradle>`
+  - Flags: `--name, -n` (nom), `--package, -p` (package de base)
+- `make entity NAME` — Flags: `--fields`, `--lombok`, `--auditing`, `--package`
+- `make repository NAME` — Flags: `--package`
+- `make service NAME` — Flags: `--entity`, `--package`
+- `make controller NAME` — Flags: `--crud`, `--entity`, `--package`
+- `make dto NAME` / `make request NAME` — Flags: `--fields`, `--package`
+- `make test <service|controller>` — Génère des templates de tests JUnit sous `src/test/java`
 
- Le dépôt contient un fichier `goreleaser.yml` prêt à être adapté. Exécutez `goreleaser release --rm-dist` depuis un tag Git.
+---
 
- ## Utilisation rapide
+## Versioning (`version`)
 
- Exemples courants (exécutés depuis la racine du projet Spring) :
+Détecte la version dans `pom.xml` (Maven) ou `build.gradle` (Gradle).
 
- ```bash
- # créer un projet Maven minimal
- spring-cli install:project maven --name testproj --package com.example.test
+Flags utiles :
 
- # créer un projet Gradle minimal
- spring-cli install:project gradle --name testproj --package com.example.test
+- `--bump patch|minor|major` — incrémente la version
+- `--set x.y.z` — fixe la version
+- `--auto` — récupère le dernier tag Git et propose une incrémentation
+- `--commit`, `--tag`, `--push` — actions Git explicites (s'exécutent seulement si demandées)
 
- # générer une entité User avec deux champs
- spring-cli make entity User --fields "name:String,age:int"
+---
 
- # générer repository/service/controller pour User
- spring-cli make repository User
- spring-cli make service User --entity User
- spring-cli make controller User --entity User --crud
+## Exemples : création de projet (Maven / Gradle)
 
- # gestion de version
- spring-cli version            # affiche la version détectée dans pom.xml/build.gradle
- spring-cli version --bump minor
- spring-cli version --set 0.2.0
- ```
+### Maven
 
- ## Commandes et flags (résumé)
+```bash
+spring-cli install:project maven --name demo-maven --package com.example.demo
+```
 
- - `install:project <maven|gradle>`
-   - Flags: `--name, -n` (nom du projet), `--package, -p` (package de base)
-   - Crée un projet minimal (Application.java/Kotlin + fichier de build + wrappers)
+Fichiers créés (exemple) :
 
- - `make entity NAME`
-   - Flags: `--fields` (ex: `id:Long,name:String`), `--lombok`, `--auditing`, `--package, -p`
+- `pom.xml`
+- `src/main/java/com/example/demo/DemoApplication.java`
+- `src/main/resources/application.properties`
+- wrappers: `mvnw`, `mvnw.cmd`, `.mvn/`
 
- - `make repository NAME` — Flags: `--package, -p`
- - `make service NAME` — Flags: `--entity, -e`, `--package, -p`
- - `make controller NAME` — Flags: `--crud`, `--entity`, `--package, -p`
- - `make dto NAME` / `make request NAME` — Flags: `--fields`, `--package, -p`
- - `make test <service|controller>` — Génère des templates JUnit sous `src/test/java`.
+### Gradle
 
- ## Versioning (`version`)
+```bash
+spring-cli install:project gradle --name demo-gradle --package com.example.demo
+```
 
- La sous-commande `version` détecte la version dans `pom.xml` (Maven) ou `build.gradle` (Gradle).
+Fichiers créés (exemple) :
 
- Flags utiles:
- - `--bump patch|minor|major` : incrémente la version
- - `--set x.y.z` : fixe la version
- - `--auto` : récupère le dernier tag Git et propose une incrémentation
- - `--commit`, `--tag`, `--push` : actions Git explicites (exécutées seulement si demandées)
+- `build.gradle` or `build.gradle.kts`
+- `settings.gradle` or `settings.gradle.kts`
+- `src/main/java/com/example/demo/DemoApplication.java`
+- wrappers: `gradlew`, `gradlew.bat`, `gradle/`
 
- ## Exemples : création d'un projet (Maven / Gradle)
+---
 
- ### Maven (création rapide)
+## Contribuer
 
- ```bash
- spring-cli install:project maven --name demo-maven --package com.example.demo
- ```
+- Ouvrez une issue pour une suggestion ou un bug.
+- Forkez, modifiez et envoyez une PR en respectant le style du dépôt et en ajoutant des tests si nécessaire.
 
- Résultat attendu (exemples de fichiers créés) :
- - `pom.xml`
- - `src/main/java/com/example/demo/DemoApplication.java`
- - `src/main/resources/application.properties`
- - wrappers `mvnw`, `mvnw.cmd` et `.mvn/`
+## Fichiers utiles
 
- ### Gradle (création rapide)
+- [cmd/version.go](cmd/version.go) — implémentation de la commande `version`.
+- [goreleaser.yml](goreleaser.yml) — configuration de release (à adapter).
 
- ```bash
- spring-cli install:project gradle --name demo-gradle --package com.example.demo
- ```
+## Licence
 
+Voir le fichier `LICENSE`.
+
+---
+
+Merci d'utiliser `spring-cli`. Dites-moi si vous préférez un style différent (par ex. README en anglais, captures d'écran, ou documentation MkDocs). 
  Résultat attendu (exemples de fichiers créés) :
  - `build.gradle` ou `build.gradle.kts`
  - `settings.gradle` ou `settings.gradle.kts`
