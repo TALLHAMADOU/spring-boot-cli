@@ -42,8 +42,12 @@ func detectBasePackage(root string) string {
 			if gid == "" && p.Parent != nil {
 				gid = strings.TrimSpace(p.Parent.GroupId)
 			}
+			aid := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(p.ArtifactId), "-", ""))
 			if gid != "" {
 				base := strings.ToLower(gid)
+				if aid != "" {
+					return base + "." + aid
+				}
 				return base
 			}
 		}
@@ -73,13 +77,16 @@ func detectBasePackage(root string) string {
 			gid = strings.TrimSpace(all[len(all)-1][1])
 		}
 		if all := reA.FindAllStringSubmatch(header, -1); len(all) > 0 {
-			aid = strings.TrimSpace(all[len(all)-1][1])
+			aid = strings.ToLower(strings.ReplaceAll(strings.TrimSpace(all[len(all)-1][1]), "-", ""))
+		}
+		if gid != "" && aid != "" {
+			return strings.ToLower(gid) + "." + aid
 		}
 		if gid != "" {
 			return strings.ToLower(gid)
 		}
 		if aid != "" {
-			return strings.ToLower(strings.ReplaceAll(aid, "-", ""))
+			return strings.ToLower(aid)
 		}
 	}
 

@@ -30,7 +30,7 @@ var testServiceCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		pkg := getEffectivePackage(".", installPackage, testPackage)
+		pkg := getEffectivePackage(".", installPackage, testServicePackage)
 
 		dir := filepath.Join("src", "test", "java", filepath.Join(strings.Split(pkg, ".")...), "service")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -64,7 +64,7 @@ var testControllerCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		pkg := getEffectivePackage(".", installPackage, testPackage)
+		pkg := getEffectivePackage(".", installPackage, testControllerPackage)
 
 		dir := filepath.Join("src", "test", "java", filepath.Join(strings.Split(pkg, ".")...), "controller")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -88,10 +88,11 @@ func init() {
 	makeCmd.AddCommand(testCmd)
 }
 
-var testPackage string
+var testServicePackage string
+var testControllerPackage string
 
 func init() {
-	// package override for tests
-	testServiceCmd.Flags().StringVarP(&testPackage, "package", "p", "", "Override base package for tests (ex: com.example.app)")
-	testControllerCmd.Flags().StringVarP(&testPackage, "package", "p", "", "Override base package for tests (ex: com.example.app)")
+	// package override for tests — separate variables to avoid cross-contamination
+	testServiceCmd.Flags().StringVarP(&testServicePackage, "package", "p", "", "Override base package for tests (ex: com.example.app)")
+	testControllerCmd.Flags().StringVarP(&testControllerPackage, "package", "p", "", "Override base package for tests (ex: com.example.app)")
 }

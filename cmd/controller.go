@@ -77,7 +77,3 @@ func init() {
 	controllerCmd.Flags().StringVarP(&controllerPackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
 	makeCmd.AddCommand(controllerCmd)
 }
-
-func init() {
-	makeCmd.AddCommand(controllerCmd)
-}

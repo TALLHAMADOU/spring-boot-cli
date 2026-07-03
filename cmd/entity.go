@@ -61,7 +61,12 @@ var entityCmd = &cobra.Command{
 		setters := []string{"    public void setId(Long id) {", "        this.id = id;", "    }"}
 
 		if entityAuditing {
-			imports = append(imports, "org.springframework.data.annotation.CreatedDate", "org.springframework.data.annotation.LastModifiedDate", "org.springframework.data.jpa.domain.support.AuditingEntityListener")
+			imports = append(imports,
+				"jakarta.persistence.EntityListeners",
+				"org.springframework.data.annotation.CreatedDate",
+				"org.springframework.data.annotation.LastModifiedDate",
+				"org.springframework.data.jpa.domain.support.AuditingEntityListener",
+			)
 			bodyFields = append(bodyFields, "", "    // Auditing fields", "    @CreatedDate", "    private java.time.Instant createdAt;", "", "    @LastModifiedDate", "    private java.time.Instant updatedAt;")
 		}
 
