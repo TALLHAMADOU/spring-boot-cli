@@ -107,7 +107,7 @@ func detectBasePackage(root string) string {
 	}
 
 	// fallback
-	fmt.Fprintf(os.Stderr, "Warning: failed to detect base package, falling back to com.example\n")
+	Error("Warning: failed to detect base package, falling back to com.example\n")
 	return "com.example"
 }
 
@@ -200,7 +200,7 @@ func ensureJPAInProject(root string) error {
 		if err := insertPOMDependency(pomPath, "spring-boot-starter-data-jpa", dep); err != nil {
 			return err
 		}
-		fmt.Printf("Added Spring Data JPA dependency to %s\n", pomPath)
+		Success("Added Spring Data JPA dependency to %s\n", pomPath)
 		return nil
 	}
 	gradlePath := filepath.Join(root, "build.gradle")
@@ -209,7 +209,7 @@ func ensureJPAInProject(root string) error {
 		if err := insertGradleDependency(gradlePath, "spring-boot-starter-data-jpa", dep); err != nil {
 			return err
 		}
-		fmt.Printf("Added Spring Data JPA dependency to %s\n", gradlePath)
+		Success("Added Spring Data JPA dependency to %s\n", gradlePath)
 	}
 	return nil
 }

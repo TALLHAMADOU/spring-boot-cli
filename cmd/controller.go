@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,13 +17,13 @@ var controllerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		raw := args[0]
 		if raw == "" {
-			fmt.Fprintln(os.Stderr, "controller name is required")
+			Error("controller name is required")
 			return
 		}
 		name := exportName(raw)
 
 		if !isSpringProject(".") {
-			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
 			os.Exit(1)
 		}
 
@@ -32,7 +31,7 @@ var controllerCmd = &cobra.Command{
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "controller")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create directories: %v\n", err)
+			Error("failed to create directories: %v\n", err)
 			return
 		}
 
@@ -44,17 +43,17 @@ var controllerCmd = &cobra.Command{
 		var content string
 		if crud {
 			if entityName == "" {
-				fmt.Fprintln(os.Stderr, "--entity is required for --crud")
+				Error("--entity is required for --crud")
 				return
 			}
 			e := exportName(entityName)
 
 			// ensure repository and service exist
 			if err := ensureRepository(pkg, e); err != nil {
-				fmt.Fprintf(os.Stderr, "failed to ensure repository: %v\n", err)
+				Error("failed to ensure repository: %v\n", err)
 			}
 			if err := ensureService(pkg, e+"Service", e); err != nil {
-				fmt.Fprintf(os.Stderr, "failed to ensure service: %v\n", err)
+				Error("failed to ensure service: %v\n", err)
 			}
 
 			var renderErr error
@@ -65,7 +64,7 @@ var controllerCmd = &cobra.Command{
 				EntityLower string
 			}{Pkg: pkg, Name: e, Entity: e, EntityLower: strings.ToLower(e)})
 			if renderErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to render controller template: %v\n", renderErr)
+				Error("failed to render controller template: %v\n", renderErr)
 				return
 			}
 		} else {
@@ -76,17 +75,17 @@ var controllerCmd = &cobra.Command{
 				NameLower string
 			}{Pkg: pkg, Name: name, NameLower: strings.ToLower(name)})
 			if renderErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to render controller template: %v\n", renderErr)
+				Error("failed to render controller template: %v\n", renderErr)
 				return
 			}
 		}
 
 		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write controller file: %v\n", err)
+			Error("failed to write controller file: %v\n", err)
 			return
 		}
 
-		fmt.Printf("Created controller: %s\n", filePath)
+		Success("Created controller: %s\n", filePath)
 	},
 }
 

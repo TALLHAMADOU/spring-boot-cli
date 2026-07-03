@@ -19,13 +19,13 @@ var dtoCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		raw := args[0]
 		if raw == "" {
-			fmt.Fprintln(os.Stderr, "dto name is required")
+			Error("dto name is required")
 			return
 		}
 		name := exportName(raw)
 
 		if !isSpringProject(".") {
-			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
 			os.Exit(1)
 		}
 
@@ -33,7 +33,7 @@ var dtoCmd = &cobra.Command{
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "dto")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create directories: %v\n", err)
+			Error("failed to create directories: %v\n", err)
 			return
 		}
 
@@ -65,11 +65,11 @@ var dtoCmd = &cobra.Command{
 
 		sb.WriteString("}\n")
 		if err := os.WriteFile(filePath, []byte(sb.String()), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write dto file: %v\n", err)
+			Error("failed to write dto file: %v\n", err)
 			return
 		}
 
-		fmt.Printf("Created dto: %s\n", filePath)
+		Success("Created dto: %s\n", filePath)
 	},
 }
 

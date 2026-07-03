@@ -41,7 +41,7 @@ var installCmd = &cobra.Command{
 		srcDir := filepath.Join(base, "src", "main", "java", pkgPath)
 
 		if err := os.MkdirAll(srcDir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create project directories: %v\n", err)
+			Error("failed to create project directories: %v\n", err)
 			return
 		}
 
@@ -49,7 +49,7 @@ var installCmd = &cobra.Command{
 		appPath := filepath.Join(srcDir, "Application.java")
 		appContent := fmt.Sprintf("package %s;\n\nimport org.springframework.boot.SpringApplication;\nimport org.springframework.boot.autoconfigure.SpringBootApplication;\n\n@SpringBootApplication\npublic class Application {\n    public static void main(String[] args) {\n        SpringApplication.run(Application.class, args);\n    }\n}\n", pkg)
 		if err := os.WriteFile(appPath, []byte(appContent), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write Application.java: %v\n", err)
+			Error("failed to write Application.java: %v\n", err)
 			return
 		}
 
@@ -93,7 +93,7 @@ var installCmd = &cobra.Command{
 </project>
 `
 			if err := os.WriteFile(filepath.Join(base, "pom.xml"), []byte(pom), 0o644); err != nil {
-				fmt.Fprintf(os.Stderr, "failed to write pom.xml: %v\n", err)
+				Error("failed to write pom.xml: %v\n", err)
 				return
 			}
 
@@ -103,7 +103,7 @@ var installCmd = &cobra.Command{
 			_ = os.WriteFile(filepath.Join(base, "mvnw"), []byte(mvnw), 0o755)
 			_ = os.WriteFile(filepath.Join(base, "mvnw.cmd"), []byte(mvnwCmd), 0o644)
 
-			fmt.Printf("Created Maven project '%s'.\nNext steps:\n  cd %s && mvn spring-boot:run\n", name, name)
+			Success("Created Maven project '%s'.\nNext steps:\n  cd %s && mvn spring-boot:run\n", name, name)
 			return
 		}
 
@@ -132,12 +132,12 @@ tasks.named('test') {
 }
 `
 		if err := os.WriteFile(filepath.Join(base, "build.gradle"), []byte(build), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write build.gradle: %v\n", err)
+			Error("failed to write build.gradle: %v\n", err)
 			return
 		}
 		settings := "rootProject.name = '" + name + "'\n"
 		if err := os.WriteFile(filepath.Join(base, "settings.gradle"), []byte(settings), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write settings.gradle: %v\n", err)
+			Error("failed to write settings.gradle: %v\n", err)
 			return
 		}
 
@@ -147,7 +147,7 @@ tasks.named('test') {
 		_ = os.WriteFile(filepath.Join(base, "gradlew"), []byte(gradlew), 0o755)
 		_ = os.WriteFile(filepath.Join(base, "gradlew.bat"), []byte(gradlewCmd), 0o644)
 
-		fmt.Printf("Created Gradle project '%s'.\nNext steps:\n  cd %s && ./gradlew bootRun\n", name, name)
+		Success("Created Gradle project '%s'.\nNext steps:\n  cd %s && ./gradlew bootRun\n", name, name)
 	},
 }
 

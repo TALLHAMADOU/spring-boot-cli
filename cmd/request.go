@@ -19,13 +19,13 @@ var requestCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		raw := args[0]
 		if raw == "" {
-			fmt.Fprintln(os.Stderr, "request name is required")
+			Error("request name is required")
 			return
 		}
 		name := exportName(raw)
 
 		if !isSpringProject(".") {
-			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
 			os.Exit(1)
 		}
 
@@ -33,7 +33,7 @@ var requestCmd = &cobra.Command{
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "request")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create directories: %v\n", err)
+			Error("failed to create directories: %v\n", err)
 			return
 		}
 
@@ -63,11 +63,11 @@ var requestCmd = &cobra.Command{
 
 		sb.WriteString("}\n")
 		if err := os.WriteFile(filePath, []byte(sb.String()), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write request file: %v\n", err)
+			Error("failed to write request file: %v\n", err)
 			return
 		}
 
-		fmt.Printf("Created request: %s\n", filePath)
+		Success("Created request: %s\n", filePath)
 	},
 }
 

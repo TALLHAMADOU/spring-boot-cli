@@ -28,7 +28,7 @@ func ensureRepository(pkg, entity string) error {
 	if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 		return err
 	}
-	fmt.Printf("Created repository: %s\n", filePath)
+	Success("Created repository: %s\n", filePath)
 	return nil
 }
 
@@ -63,7 +63,7 @@ func ensureService(pkg, serviceName, entity string) error {
 		if err := os.WriteFile(ifacePath, []byte(iface), 0o644); err != nil {
 			return err
 		}
-		fmt.Printf("Created service interface: %s\n", ifacePath)
+		Success("Created service interface: %s\n", ifacePath)
 	}
 
 	if _, err := os.Stat(implPath); os.IsNotExist(err) {
@@ -94,7 +94,7 @@ func ensureService(pkg, serviceName, entity string) error {
 		if err := os.WriteFile(implPath, []byte(impl), 0o644); err != nil {
 			return err
 		}
-		fmt.Printf("Created service implementation: %s\n", implPath)
+		Success("Created service implementation: %s\n", implPath)
 	}
 	return nil
 }

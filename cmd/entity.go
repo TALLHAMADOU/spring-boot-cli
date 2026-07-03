@@ -24,7 +24,7 @@ var entityCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		raw := args[0]
 		if raw == "" {
-			fmt.Fprintln(os.Stderr, "entity name is required")
+			Error("entity name is required")
 			return
 		}
 		name := exportName(raw)
@@ -43,13 +43,13 @@ var entityCmd = &cobra.Command{
 
 		// ensure we are in a Spring Boot project
 		if !isSpringProject(".") {
-			fmt.Fprintln(os.Stderr, "Erreur: Lancez dans un projet Spring Boot avec pom.xml ou build.gradle")
+			Error("Erreur: Lancez dans un projet Spring Boot avec pom.xml ou build.gradle")
 			os.Exit(1)
 		}
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "entity")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create directories: %v\n", err)
+			Error("failed to create directories: %v\n", err)
 			return
 		}
 
@@ -123,7 +123,7 @@ var entityCmd = &cobra.Command{
 		sb.WriteString("}\n")
 
 		if err := os.WriteFile(filePath, []byte(sb.String()), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write entity file: %v\n", err)
+			Error("failed to write entity file: %v\n", err)
 			return
 		}
 
@@ -134,10 +134,10 @@ var entityCmd = &cobra.Command{
 
 		// ensure JPA dependency exists for entity generation (if pom/build.gradle present)
 		if err := ensureJPAInProject("."); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to ensure JPA dependency: %v\n", err)
+			Warning("failed to ensure JPA dependency: %v\n", err)
 		}
 
-		fmt.Printf("Created entity: %s\n", filePath)
+		Success("Created entity: %s\n", filePath)
 	},
 }
 
@@ -245,7 +245,7 @@ func addLombokToProject(root string) {
 		</dependency>
 `
 		if err := insertPOMDependency(pomPath, "org.projectlombok", dep); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to add Lombok dependency: %v\n", err)
+			Warning("failed to add Lombok dependency: %v\n", err)
 			return
 		}
 		plugin := `      <plugin>
@@ -264,9 +264,9 @@ func addLombokToProject(root string) {
 			</plugin>
 `
 		if err := insertPOMPlugin(pomPath, "maven-compiler-plugin", plugin); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to add Lombok compiler plugin: %v\n", err)
+			Warning("failed to add Lombok compiler plugin: %v\n", err)
 		}
-		fmt.Printf("Added Lombok dependency and compiler plugin to %s\n", pomPath)
+		Success("Added Lombok dependency and compiler plugin to %s\n", pomPath)
 		return
 	}
 
@@ -274,9 +274,9 @@ func addLombokToProject(root string) {
 	if _, err := os.Stat(gradlePath); err == nil {
 		dep := "    compileOnly 'org.projectlombok:lombok:1.18.26'\n    annotationProcessor 'org.projectlombok:lombok:1.18.26'\n"
 		if err := insertGradleDependency(gradlePath, "org.projectlombok", dep); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to add Lombok dependency: %v\n", err)
+			Warning("failed to add Lombok dependency: %v\n", err)
 			return
 		}
-		fmt.Printf("Added Lombok dependency to %s\n", gradlePath)
+		Success("Added Lombok dependency to %s\n", gradlePath)
 	}
 }

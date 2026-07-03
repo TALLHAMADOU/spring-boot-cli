@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,12 +20,12 @@ var testServiceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		raw := args[0]
 		if raw == "" {
-			fmt.Fprintln(os.Stderr, "service name is required")
+			Error("service name is required")
 			return
 		}
 		name := exportName(raw)
 		if !isSpringProject(".") {
-			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
 			os.Exit(1)
 		}
 
@@ -34,7 +33,7 @@ var testServiceCmd = &cobra.Command{
 
 		dir := filepath.Join("src", "test", "java", filepath.Join(strings.Split(pkg, ".")...), "service")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create directories: %v\n", err)
+			Error("failed to create directories: %v\n", err)
 			return
 		}
 
@@ -44,14 +43,14 @@ var testServiceCmd = &cobra.Command{
 			Name string
 		}{Pkg: pkg, Name: name})
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to render test template: %v\n", err)
+			Error("failed to render test template: %v\n", err)
 			return
 		}
 		if err := os.WriteFile(file, []byte(content), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write test file: %v\n", err)
+			Error("failed to write test file: %v\n", err)
 			return
 		}
-		fmt.Printf("Created service test: %s\n", file)
+		Success("Created service test: %s\n", file)
 	},
 }
 
@@ -62,12 +61,12 @@ var testControllerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		raw := args[0]
 		if raw == "" {
-			fmt.Fprintln(os.Stderr, "controller name is required")
+			Error("controller name is required")
 			return
 		}
 		name := exportName(raw)
 		if !isSpringProject(".") {
-			fmt.Fprintln(os.Stderr, "Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
+			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
 			os.Exit(1)
 		}
 
@@ -75,7 +74,7 @@ var testControllerCmd = &cobra.Command{
 
 		dir := filepath.Join("src", "test", "java", filepath.Join(strings.Split(pkg, ".")...), "controller")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create directories: %v\n", err)
+			Error("failed to create directories: %v\n", err)
 			return
 		}
 
@@ -85,14 +84,14 @@ var testControllerCmd = &cobra.Command{
 			Name string
 		}{Pkg: pkg, Name: name})
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to render test template: %v\n", err)
+			Error("failed to render test template: %v\n", err)
 			return
 		}
 		if err := os.WriteFile(file, []byte(content), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write test file: %v\n", err)
+			Error("failed to write test file: %v\n", err)
 			return
 		}
-		fmt.Printf("Created controller test: %s\n", file)
+		Success("Created controller test: %s\n", file)
 	},
 }
 
