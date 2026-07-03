@@ -9,6 +9,7 @@ builds:
       - windows
     goarch:
       - amd64
+      - arm64
     binary: spring-cli
 
 archives:
@@ -22,8 +23,5 @@ archives:
 
 release:
   github:
-    # Replace these values with your GitHub repo owner/name before running goreleaser
-    # e.g. owner: hunter
-    #       name: Spring-CLi
-    owner: replace-with-owner
-    name: replace-with-repo
+    owner: TALLHAMADOU
+    name: spring-boot-cli
