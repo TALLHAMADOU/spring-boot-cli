@@ -104,16 +104,19 @@ var entityCmd = &cobra.Command{
 		sb.WriteString("@Entity\n")
 		sb.WriteString(fmt.Sprintf("public class %s {\n", name))
 		for _, l := range bodyFields {
-			sb.WriteString(l + "\n")
+			sb.WriteString(l)
+			sb.WriteString("\n")
 		}
 		sb.WriteString("\n")
 		if !entityLombok {
 			for _, g := range getters {
-				sb.WriteString(g + "\n")
+				sb.WriteString(g)
+				sb.WriteString("\n")
 			}
 			sb.WriteString("\n")
 			for _, s := range setters {
-				sb.WriteString(s + "\n")
+				sb.WriteString(s)
+				sb.WriteString("\n")
 			}
 		} else {
 			// Lombok annotations

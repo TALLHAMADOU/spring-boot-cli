@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,33 +37,8 @@ var dtoCmd = &cobra.Command{
 		}
 
 		filePath := filepath.Join(dir, name+"Dto.java")
-		sb := strings.Builder{}
-		sb.WriteString(fmt.Sprintf("package %s.dto;\n\n", pkg))
-		sb.WriteString("public class " + name + "Dto {\n")
-
-		if strings.TrimSpace(dtoFields) != "" {
-			parts := strings.Split(dtoFields, ",")
-			for _, p := range parts {
-				p = strings.TrimSpace(p)
-				if p == "" {
-					continue
-				}
-				kv := strings.SplitN(p, ":", 2)
-				fname := strings.TrimSpace(kv[0])
-				ftype := "String"
-				if len(kv) == 2 {
-					ftype = strings.TrimSpace(kv[1])
-				}
-				sb.WriteString(fmt.Sprintf("    private %s %s;\n", exportJavaType(ftype), fname))
-				// getter
-				sb.WriteString(fmt.Sprintf("    public %s get%s() { return %s; }\n", exportJavaType(ftype), exportName(fname), fname))
-				// setter
-				sb.WriteString(fmt.Sprintf("    public void set%s(%s %s) { this.%s = %s; }\n", exportName(fname), exportJavaType(ftype), fname, fname, fname))
-			}
-		}
-
-		sb.WriteString("}\n")
-		if err := os.WriteFile(filePath, []byte(sb.String()), 0o644); err != nil {
+		content := generatePojoContent(name, pkg, "dto", "Dto", dtoFields)
+		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 			Error("failed to write dto file: %v\n", err)
 			return
 		}

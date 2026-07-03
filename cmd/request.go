@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,31 +37,8 @@ var requestCmd = &cobra.Command{
 		}
 
 		filePath := filepath.Join(dir, name+"Request.java")
-		sb := strings.Builder{}
-		sb.WriteString(fmt.Sprintf("package %s.request;\n\n", pkg))
-		sb.WriteString("public class " + name + "Request {\n")
-
-		if strings.TrimSpace(requestFields) != "" {
-			parts := strings.Split(requestFields, ",")
-			for _, p := range parts {
-				p = strings.TrimSpace(p)
-				if p == "" {
-					continue
-				}
-				kv := strings.SplitN(p, ":", 2)
-				fname := strings.TrimSpace(kv[0])
-				ftype := "String"
-				if len(kv) == 2 {
-					ftype = strings.TrimSpace(kv[1])
-				}
-				sb.WriteString(fmt.Sprintf("    private %s %s;\n", exportJavaType(ftype), fname))
-				sb.WriteString(fmt.Sprintf("    public %s get%s() { return %s; }\n", exportJavaType(ftype), exportName(fname), fname))
-				sb.WriteString(fmt.Sprintf("    public void set%s(%s %s) { this.%s = %s; }\n", exportName(fname), exportJavaType(ftype), fname, fname, fname))
-			}
-		}
-
-		sb.WriteString("}\n")
-		if err := os.WriteFile(filePath, []byte(sb.String()), 0o644); err != nil {
+		content := generatePojoContent(name, pkg, "request", "Request", requestFields)
+		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 			Error("failed to write request file: %v\n", err)
 			return
 		}
