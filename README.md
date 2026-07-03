@@ -180,5 +180,4 @@ Merci d'utiliser `spring-cli`. Dites-moi si vous préférez un style différent 
 
  Voir le fichier `LICENSE` pour les détails.
 
- Merci d'utiliser `spring-cli` 
- 
+Merci d'utiliser `spring-cli`.
