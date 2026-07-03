@@ -39,7 +39,14 @@ var testServiceCmd = &cobra.Command{
 		}
 
 		file := filepath.Join(dir, name+"ServiceTest.java")
-		content := fmt.Sprintf("package %s.service;\n\nimport org.junit.jupiter.api.Test;\nimport org.junit.jupiter.api.extension.ExtendWith;\nimport org.mockito.InjectMocks;\nimport org.mockito.Mock;\nimport org.mockito.junit.jupiter.MockitoExtension;\nimport static org.assertj.core.api.Assertions.assertThat;\n\n@ExtendWith(MockitoExtension.class)\npublic class %sServiceTest {\n\n    @Mock\n    // TODO: mock dependencies\n    private Object repository;\n\n    @InjectMocks\n    private %sService service;\n\n    @Test\n    void testFindAll() {\n        // TODO: implement test\n        // assertThat(service.findAll()).isEmpty();\n    }\n}\n", pkg, name, name)
+		content, err := renderTemplate("test_service", struct {
+			Pkg  string
+			Name string
+		}{Pkg: pkg, Name: name})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to render test template: %v\n", err)
+			return
+		}
 		if err := os.WriteFile(file, []byte(content), 0o644); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to write test file: %v\n", err)
 			return
@@ -73,7 +80,14 @@ var testControllerCmd = &cobra.Command{
 		}
 
 		file := filepath.Join(dir, name+"ControllerTest.java")
-		content := fmt.Sprintf("package %s.controller;\n\nimport org.junit.jupiter.api.Test;\nimport org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;\nimport org.springframework.boot.test.mock.mockito.MockBean;\nimport org.springframework.test.web.servlet.MockMvc;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport static org.assertj.core.api.Assertions.assertThat;\n\n@WebMvcTest(%sController.class)\npublic class %sControllerTest {\n\n    @Autowired\n    private MockMvc mockMvc;\n\n    @MockBean\n    private Object service;\n\n    @Test\n    void testGetAll() throws Exception {\n        // TODO: implement MockMvc test\n        // example assertion: assertThat(mockMvc).isNotNull();\n    }\n}\n", pkg, name, name)
+		content, err := renderTemplate("test_controller", struct {
+			Pkg  string
+			Name string
+		}{Pkg: pkg, Name: name})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to render test template: %v\n", err)
+			return
+		}
 		if err := os.WriteFile(file, []byte(content), 0o644); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to write test file: %v\n", err)
 			return

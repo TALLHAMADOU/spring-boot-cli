@@ -111,49 +111,106 @@ func detectBasePackage(root string) string {
 	return "com.example"
 }
 
-// ensureJPAInProject ensures that spring-boot-starter-data-jpa is present in pom.xml if it exists
-func ensureJPAInProject(root string) error {
-	pomPath := filepath.Join(root, "pom.xml")
+// insertPOMDependency safely inserts a dependency XML block into pom.xml.
+// sentinel: unique substring identifying the dependency (used to avoid duplicates).
+// depXML: the full <dependency>...</dependency> block including leading whitespace.
+func insertPOMDependency(pomPath, sentinel, depXML string) error {
 	data, err := os.ReadFile(pomPath)
 	if err != nil {
-		// no pom.xml, try build.gradle
-		gradPath := filepath.Join(root, "build.gradle")
-		g, err2 := os.ReadFile(gradPath)
-		if err2 != nil {
-			return nil // nothing to do
-		}
-		s := string(g)
-		if strings.Contains(s, "spring-boot-starter-data-jpa") {
-			return nil
-		}
-		add := "\n// Data JPA\nimplementation 'org.springframework.boot:spring-boot-starter-data-jpa'\n"
-		if strings.Contains(s, "dependencies {") {
-			s = strings.Replace(s, "dependencies {", "dependencies {"+add, 1)
-		} else {
-			s = s + "\ndependencies {" + add + "}\n"
-		}
-		return os.WriteFile(gradPath, []byte(s), 0o644)
+		return err
 	}
-
 	s := string(data)
-	if strings.Contains(s, "spring-boot-starter-data-jpa") {
+	if strings.Contains(s, sentinel) {
+		return nil // already present
+	}
+	// Locate <dependencies> opening tag, then find the matching </dependencies>.
+	// This avoids accidentally matching </dependencies> inside a <parent> block.
+	depOpenRe := regexp.MustCompile(`<dependencies\b[^>]*>`)
+	if loc := depOpenRe.FindStringIndex(s); loc != nil {
+		rest := s[loc[1]:]
+		if closeIdx := strings.Index(rest, "</dependencies>"); closeIdx >= 0 {
+			insertAt := loc[1] + closeIdx
+			s = s[:insertAt] + depXML + s[insertAt:]
+			return os.WriteFile(pomPath, []byte(s), 0o644)
+		}
+	}
+	// No <dependencies> section: create one before </project>.
+	if idx := strings.LastIndex(s, "</project>"); idx >= 0 {
+		s = s[:idx] + "  <dependencies>\n" + depXML + "  </dependencies>\n" + s[idx:]
+		return os.WriteFile(pomPath, []byte(s), 0o644)
+	}
+	return fmt.Errorf("cannot insert dependency into %s: no suitable insertion point", pomPath)
+}
+
+// insertPOMPlugin safely inserts a plugin XML block inside <build><plugins>.
+func insertPOMPlugin(pomPath, sentinel, pluginXML string) error {
+	data, err := os.ReadFile(pomPath)
+	if err != nil {
+		return err
+	}
+	s := string(data)
+	if strings.Contains(s, sentinel) {
 		return nil
 	}
+	pluginOpenRe := regexp.MustCompile(`<plugins\b[^>]*>`)
+	if loc := pluginOpenRe.FindStringIndex(s); loc != nil {
+		rest := s[loc[1]:]
+		if closeIdx := strings.Index(rest, "</plugins>"); closeIdx >= 0 {
+			insertAt := loc[1] + closeIdx
+			s = s[:insertAt] + pluginXML + s[insertAt:]
+			return os.WriteFile(pomPath, []byte(s), 0o644)
+		}
+	}
+	// Fallback: add inside <build>, or before </project>.
+	if strings.Contains(s, "</build>") {
+		s = strings.Replace(s, "</build>", "  <plugins>\n"+pluginXML+"  </plugins>\n</build>", 1)
+	} else if idx := strings.LastIndex(s, "</project>"); idx >= 0 {
+		s = s[:idx] + "  <build>\n    <plugins>\n" + pluginXML + "    </plugins>\n  </build>\n" + s[idx:]
+	}
+	return os.WriteFile(pomPath, []byte(s), 0o644)
+}
 
-	dep := `    <dependency>
+// insertGradleDependency safely inserts a dependency line into build.gradle.
+func insertGradleDependency(gradlePath, sentinel, depLine string) error {
+	data, err := os.ReadFile(gradlePath)
+	if err != nil {
+		return err
+	}
+	s := string(data)
+	if strings.Contains(s, sentinel) {
+		return nil
+	}
+	if strings.Contains(s, "dependencies {") {
+		s = strings.Replace(s, "dependencies {", "dependencies {\n"+depLine, 1)
+	} else {
+		s = s + "\ndependencies {\n" + depLine + "}\n"
+	}
+	return os.WriteFile(gradlePath, []byte(s), 0o644)
+}
+
+// ensureJPAInProject ensures that spring-boot-starter-data-jpa is present in pom.xml or build.gradle.
+func ensureJPAInProject(root string) error {
+	pomPath := filepath.Join(root, "pom.xml")
+	if _, err := os.Stat(pomPath); err == nil {
+		dep := `    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
 `
-	if strings.Contains(s, "</dependencies>") {
-		s = strings.Replace(s, "</dependencies>", dep+"  </dependencies>", 1)
-	} else {
-		s = strings.Replace(s, "</project>", "  <dependencies>\n"+dep+"  </dependencies>\n</project>", 1)
+		if err := insertPOMDependency(pomPath, "spring-boot-starter-data-jpa", dep); err != nil {
+			return err
+		}
+		fmt.Printf("Added Spring Data JPA dependency to %s\n", pomPath)
+		return nil
 	}
-	if err := os.WriteFile(pomPath, []byte(s), 0o644); err != nil {
-		return err
+	gradlePath := filepath.Join(root, "build.gradle")
+	if _, err := os.Stat(gradlePath); err == nil {
+		dep := "    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'\n"
+		if err := insertGradleDependency(gradlePath, "spring-boot-starter-data-jpa", dep); err != nil {
+			return err
+		}
+		fmt.Printf("Added Spring Data JPA dependency to %s\n", gradlePath)
 	}
-	fmt.Printf("Added Spring Data JPA dependency to %s\n", pomPath)
 	return nil
 }
 

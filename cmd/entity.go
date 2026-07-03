@@ -235,27 +235,20 @@ func uniqueStrings(in []string) []string {
 
 // addLombokToProject tries to insert Lombok dependency into pom.xml or build.gradle
 func addLombokToProject(root string) {
-	// pom.xml
 	pomPath := filepath.Join(root, "pom.xml")
-	if data, err := os.ReadFile(pomPath); err == nil {
-		s := string(data)
-		if !strings.Contains(s, "org.projectlombok") {
-			dep := `    <dependency>
+	if _, err := os.Stat(pomPath); err == nil {
+		dep := `    <dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.26</version>
 			<scope>provided</scope>
 		</dependency>
 `
-			if strings.Contains(s, "</dependencies>") {
-				s = strings.Replace(s, "</dependencies>", dep+"  </dependencies>", 1)
-			} else {
-				// append dependencies section
-				s = strings.Replace(s, "</project>", "  <dependencies>\n"+dep+"  </dependencies>\n</project>", 1)
-			}
-
-			// ensure maven-compiler-plugin has annotationProcessorPaths for lombok
-			plugin := `      <plugin>
+		if err := insertPOMDependency(pomPath, "org.projectlombok", dep); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to add Lombok dependency: %v\n", err)
+			return
+		}
+		plugin := `      <plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.10.1</version>
@@ -270,39 +263,20 @@ func addLombokToProject(root string) {
 				</configuration>
 			</plugin>
 `
-
-			if strings.Contains(s, "</plugins>") {
-				// insert before closing plugins
-				s = strings.Replace(s, "</plugins>", plugin+"    </plugins>", 1)
-			} else if strings.Contains(s, "</build>") {
-				// create plugins block inside build
-				s = strings.Replace(s, "</build>", "  <plugins>\n"+plugin+"  </plugins>\n</build>", 1)
-			} else {
-				// append a build section
-				s = strings.Replace(s, "</project>", "  <build>\n    <plugins>\n"+plugin+"    </plugins>\n  </build>\n</project>", 1)
-			}
-
-			_ = os.WriteFile(pomPath, []byte(s), 0o644)
-			fmt.Printf("Added Lombok dependency and compiler plugin to %s\n", pomPath)
-			return
+		if err := insertPOMPlugin(pomPath, "maven-compiler-plugin", plugin); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to add Lombok compiler plugin: %v\n", err)
 		}
+		fmt.Printf("Added Lombok dependency and compiler plugin to %s\n", pomPath)
+		return
 	}
 
-	// build.gradle
-	gradPath := filepath.Join(root, "build.gradle")
-	if data, err := os.ReadFile(gradPath); err == nil {
-		s := string(data)
-		if !strings.Contains(s, "org.projectlombok") {
-			add := "\n// Lombok\ncompileOnly 'org.projectlombok:lombok:1.18.26'\nannotationProcessor 'org.projectlombok:lombok:1.18.26'\n"
-			if strings.Contains(s, "dependencies {") {
-				s = strings.Replace(s, "dependencies {", "dependencies {"+add, 1)
-			} else {
-				s = s + "\ndependencies {" + add + "}\n"
-			}
-			// also ensure annotationProcessor configuration is present for Gradle
-			_ = os.WriteFile(gradPath, []byte(s), 0o644)
-			fmt.Printf("Added Lombok dependency to %s\n", gradPath)
+	gradlePath := filepath.Join(root, "build.gradle")
+	if _, err := os.Stat(gradlePath); err == nil {
+		dep := "    compileOnly 'org.projectlombok:lombok:1.18.26'\n    annotationProcessor 'org.projectlombok:lombok:1.18.26'\n"
+		if err := insertGradleDependency(gradlePath, "org.projectlombok", dep); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to add Lombok dependency: %v\n", err)
 			return
 		}
+		fmt.Printf("Added Lombok dependency to %s\n", gradlePath)
 	}
 }

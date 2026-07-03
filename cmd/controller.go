@@ -57,9 +57,28 @@ var controllerCmd = &cobra.Command{
 				fmt.Fprintf(os.Stderr, "failed to ensure service: %v\n", err)
 			}
 
-			content = fmt.Sprintf("package %s.controller;\n\nimport org.springframework.web.bind.annotation.*;\nimport java.util.List;\nimport java.util.Optional;\nimport %s.entity.%s;\nimport %s.service.%sService;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.beans.factory.annotation.Autowired;\n\n@RestController\n@RequestMapping(\"/api/%s\")\npublic class %sController {\n\n    @Autowired\n    private %sService service;\n\n    @GetMapping\n    public List<%s> list() {\n        return service.findAll();\n    }\n\n    @GetMapping(\"/{id}\")\n    public ResponseEntity<%s> get(@PathVariable Long id) {\n        return service.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());\n    }\n\n    @PostMapping\n    public %s create(@RequestBody %s entity) {\n        return service.save(entity);\n    }\n\n    @PutMapping(\"/{id}\")\n    public ResponseEntity<%s> update(@PathVariable Long id, @RequestBody %s entity) {\n        return service.update(id, entity).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());\n    }\n\n    @DeleteMapping(\"/{id}\")\n    public ResponseEntity<Void> delete(@PathVariable Long id) {\n        service.deleteById(id);\n        return ResponseEntity.noContent().build();\n    }\n}\n", pkg, pkg, e, pkg, e, strings.ToLower(e), e, e, e, e, e, e, e, e)
+			var renderErr error
+			content, renderErr = renderTemplate("controller_crud", struct {
+				Pkg         string
+				Name        string
+				Entity      string
+				EntityLower string
+			}{Pkg: pkg, Name: e, Entity: e, EntityLower: strings.ToLower(e)})
+			if renderErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to render controller template: %v\n", renderErr)
+				return
+			}
 		} else {
-			content = fmt.Sprintf("package %s.controller;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/%s\")\npublic class %sController {\n\n    @GetMapping\n    public String index() {\n        return \"ok\";\n    }\n}\n", pkg, strings.ToLower(name), name)
+			var renderErr error
+			content, renderErr = renderTemplate("controller_basic", struct {
+				Pkg       string
+				Name      string
+				NameLower string
+			}{Pkg: pkg, Name: name, NameLower: strings.ToLower(name)})
+			if renderErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to render controller template: %v\n", renderErr)
+				return
+			}
 		}
 
 		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {

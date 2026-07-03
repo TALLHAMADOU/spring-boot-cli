@@ -37,7 +37,14 @@ var repositoryCmd = &cobra.Command{
 		}
 
 		filePath := filepath.Join(dir, name+"Repository.java")
-		content := fmt.Sprintf("package %s.repository;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport %s.entity.%s;\n\npublic interface %sRepository extends JpaRepository<%s, Long> {\n}\n", pkg, pkg, name, name, name)
+		content, err := renderTemplate("repository", struct {
+			Pkg    string
+			Entity string
+		}{Pkg: pkg, Entity: name})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to render repository template: %v\n", err)
+			return
+		}
 
 		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to write repository file: %v\n", err)

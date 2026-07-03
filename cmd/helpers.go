@@ -18,7 +18,13 @@ func ensureRepository(pkg, entity string) error {
 	if _, err := os.Stat(filePath); err == nil {
 		return nil // exists
 	}
-	content := fmt.Sprintf("package %s.repository;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport %s.entity.%s;\n\npublic interface %sRepository extends JpaRepository<%s, Long> {\n}\n", pkg, pkg, entity, entity, entity)
+	content, err := renderTemplate("repository", struct {
+		Pkg    string
+		Entity string
+	}{Pkg: pkg, Entity: entity})
+	if err != nil {
+		return fmt.Errorf("render repository template: %w", err)
+	}
 	if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 		return err
 	}
@@ -46,7 +52,14 @@ func ensureService(pkg, serviceName, entity string) error {
 	implPath := filepath.Join(implDir, serviceName+"ServiceImpl.java")
 
 	if _, err := os.Stat(ifacePath); os.IsNotExist(err) {
-		iface := fmt.Sprintf("package %s.service;\n\nimport java.util.List;\nimport java.util.Optional;\nimport %s.entity.%s;\n\npublic interface %sService {\n    List<%s> findAll();\n    Optional<%s> findById(Long id);\n    %s save(%s entity);\n    Optional<%s> update(Long id, %s entity);\n    void deleteById(Long id);\n}\n", pkg, pkg, entity, serviceName, entity, entity, entity, entity, entity, entity)
+		iface, err := renderTemplate("service_interface", struct {
+			Pkg    string
+			Name   string
+			Entity string
+		}{Pkg: pkg, Name: serviceName, Entity: entity})
+		if err != nil {
+			return fmt.Errorf("render service_interface template: %w", err)
+		}
 		if err := os.WriteFile(ifacePath, []byte(iface), 0o644); err != nil {
 			return err
 		}
@@ -64,19 +77,55 @@ func ensureService(pkg, serviceName, entity string) error {
 			cap := exportName(f.name)
 			copyLines += fmt.Sprintf("            existing.set%s(entity.get%s());\n", cap, cap)
 		}
-
-		updateBody := "            // no fields detected to copy\n            return repository.save(existing);\n"
-		if copyLines != "" {
-			updateBody = copyLines + "\n            return repository.save(existing);\n"
+		if copyLines == "" {
+			copyLines = "            // no fields detected to copy\n            return repository.save(existing);\n"
+		} else {
+			copyLines += "\n            return repository.save(existing);\n"
 		}
-
-		impl := fmt.Sprintf("package %s.service.impl;\n\nimport java.util.*;\nimport org.springframework.stereotype.Service;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport %s.service.%sService;\nimport %s.entity.%s;\nimport %s.repository.%sRepository;\n\n@Service\npublic class %sServiceImpl implements %sService {\n\n    private final %sRepository repository;\n\n    @Autowired\n    public %sServiceImpl(%sRepository repository) {\n        this.repository = repository;\n    }\n\n    @Override\n    public List<%s> findAll() {\n        return repository.findAll();\n    }\n\n    @Override\n    public Optional<%s> findById(Long id) {\n        return repository.findById(id);\n    }\n\n    @Override\n    public %s save(%s entity) {\n        return repository.save(entity);\n    }\n\n    @Override\n    public Optional<%s> update(Long id, %s entity) {\n        return repository.findById(id).map(existing -> {\n%s    });\n    }\n\n    @Override\n    public void deleteById(Long id) {\n        repository.deleteById(id);\n    }\n}\n", pkg, pkg, serviceName, pkg, entity, pkg, entity, serviceName, serviceName, entity+"Repository", serviceName, entity+"Repository", entity, entity, entity, entity, entity, entity, updateBody)
+		impl, err := renderTemplate("service_impl", struct {
+			Pkg       string
+			Name      string
+			Entity    string
+			CopyLines string
+		}{Pkg: pkg, Name: serviceName, Entity: entity, CopyLines: copyLines})
+		if err != nil {
+			return fmt.Errorf("render service_impl template: %w", err)
+		}
 		if err := os.WriteFile(implPath, []byte(impl), 0o644); err != nil {
 			return err
 		}
 		fmt.Printf("Created service implementation: %s\n", implPath)
 	}
 	return nil
+}
+
+// generatePojoContent generates a Java POJO class (DTO, Request, etc.) content string.
+// name: capitalized class name, pkg: base package, subPkg: sub-package (e.g. "dto"),
+// suffix: class name suffix (e.g. "Dto", "Request"), fieldsSpec: "name:Type,..." pairs.
+func generatePojoContent(name, pkg, subPkg, suffix, fieldsSpec string) string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("package %s.%s;\n\n", pkg, subPkg))
+	sb.WriteString(fmt.Sprintf("public class %s%s {\n", name, suffix))
+	if strings.TrimSpace(fieldsSpec) != "" {
+		for _, p := range strings.Split(fieldsSpec, ",") {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			kv := strings.SplitN(p, ":", 2)
+			fname := strings.TrimSpace(kv[0])
+			ftype := "String"
+			if len(kv) == 2 {
+				ftype = exportJavaType(strings.TrimSpace(kv[1]))
+			}
+			sb.WriteString(fmt.Sprintf("    private %s %s;\n", ftype, fname))
+			sb.WriteString(fmt.Sprintf("    public %s get%s() { return %s; }\n", ftype, exportName(fname), fname))
+			sb.WriteString(fmt.Sprintf("    public void set%s(%s %s) { this.%s = %s; }\n",
+				exportName(fname), ftype, fname, fname, fname))
+		}
+	}
+	sb.WriteString("}\n")
+	return sb.String()
 }
 
 // readEntityFields attempts to parse private fields from the generated entity java file
