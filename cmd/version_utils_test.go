@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -44,6 +45,50 @@ func TestDetectVersionInPOMandSet(t *testing.T) {
 	v2, err := detectVersionInPOM(tmp)
 	if err != nil || v2 != "0.1.0" {
 		t.Fatalf("expected 0.1.0 got %s err %v", v2, err)
+	}
+}
+
+func TestSetVersionInPOMWithParent(t *testing.T) {
+	tmp := t.TempDir()
+	pom := `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.2.0</version>
+  </parent>
+  <groupId>com.example</groupId>
+  <artifactId>demo</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+</project>`
+	p := filepath.Join(tmp, "pom.xml")
+	if err := os.WriteFile(p, []byte(pom), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := setVersionInPOM(tmp, "0.2.0"); err != nil {
+		t.Fatal(err)
+	}
+	out, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(out)
+	// Parent version must be preserved.
+	if !strings.Contains(s, "<version>3.2.0</version>") {
+		t.Fatalf("parent version was modified:\n%s", s)
+	}
+	// Project version must be updated.
+	if !strings.Contains(s, "<version>0.2.0</version>") {
+		t.Fatalf("project version not set to 0.2.0:\n%s", s)
+	}
+	if strings.Contains(s, "0.0.1-SNAPSHOT") {
+		t.Fatalf("old project version still present:\n%s", s)
+	}
+	// detectVersionInPOM must report the project version, not the parent one.
+	v, err := detectVersionInPOM(tmp)
+	if err != nil || v != "0.2.0" {
+		t.Fatalf("expected detected 0.2.0 got %s err %v", v, err)
 	}
 }
 

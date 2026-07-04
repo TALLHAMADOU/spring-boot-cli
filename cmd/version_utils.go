@@ -37,7 +37,26 @@ func detectVersionInPOM(root string) (string, error) {
 	return "", fmt.Errorf("version not found in pom.xml")
 }
 
-// setVersionInPOM sets the project-level version (not parent) when possible
+// parentBlockRange returns the [start, end) byte range of the <parent>...</parent>
+// block in s, or (-1, -1) if there is none.
+func parentBlockRange(s string) (int, int) {
+	start := strings.Index(s, "<parent")
+	if start < 0 {
+		return -1, -1
+	}
+	closeIdx := strings.Index(s[start:], "</parent>")
+	if closeIdx < 0 {
+		return -1, -1
+	}
+	return start, start + closeIdx + len("</parent>")
+}
+
+// outsideParent reports whether byte offset idx falls outside the parent block.
+func outsideParent(idx, pStart, pEnd int) bool {
+	return pStart < 0 || idx < pStart || idx >= pEnd
+}
+
+// setVersionInPOM sets the project-level version (not the parent version).
 func setVersionInPOM(root, newVersion string) error {
 	pomPath := filepath.Join(root, "pom.xml")
 	data, err := os.ReadFile(pomPath)
@@ -45,30 +64,28 @@ func setVersionInPOM(root, newVersion string) error {
 		return err
 	}
 	s := string(data)
-	// try to find a <version> tag that is not inside <parent>...
-	parentIdx := strings.Index(s, "<parent")
-	var beforeParent string
-	if parentIdx >= 0 {
-		beforeParent = s[:parentIdx]
-	} else {
-		beforeParent = s
+	pStart, pEnd := parentBlockRange(s)
+
+	// Replace the first <version> tag located outside the <parent> block.
+	re := regexp.MustCompile(`<version>\s*[^<\s]+\s*</version>`)
+	for _, loc := range re.FindAllStringIndex(s, -1) {
+		if outsideParent(loc[0], pStart, pEnd) {
+			s = s[:loc[0]] + "<version>" + newVersion + "</version>" + s[loc[1]:]
+			return os.WriteFile(pomPath, []byte(s), 0o644)
+		}
 	}
-	re := regexp.MustCompile(`<version>\s*([^<\s]+)\s*</version>`)
-	if m := re.FindStringSubmatch(beforeParent); len(m) >= 2 {
-		// replace only the first occurrence in beforeParent
-		replaced := re.ReplaceAllString(beforeParent, "<version>"+newVersion+"</version>")
-		s = replaced + s[len(beforeParent):]
-		return os.WriteFile(pomPath, []byte(s), 0o644)
+
+	// Fallback: insert version after the first <artifactId> outside the parent block.
+	artRe := regexp.MustCompile(`<artifactId>\s*[^<\s]+\s*</artifactId>`)
+	for _, loc := range artRe.FindAllStringIndex(s, -1) {
+		if outsideParent(loc[0], pStart, pEnd) {
+			insert := "\n  <version>" + newVersion + "</version>"
+			s = s[:loc[1]] + insert + s[loc[1]:]
+			return os.WriteFile(pomPath, []byte(s), 0o644)
+		}
 	}
-	// fallback: insert version after <artifactId> if present
-	artRe := regexp.MustCompile(`<artifactId>\s*([^<\s]+)\s*</artifactId>`)
-	if loc := artRe.FindStringIndex(s); loc != nil {
-		insertAt := loc[1]
-		insert := "\n  <version>" + newVersion + "</version>\n"
-		s = s[:insertAt] + insert + s[insertAt:]
-		return os.WriteFile(pomPath, []byte(s), 0o644)
-	}
-	// last resort: replace first </project> with version section
+
+	// Last resort: insert a version section before </project>.
 	s = strings.Replace(s, "</project>", "  <version>"+newVersion+"</version>\n</project>", 1)
 	return os.WriteFile(pomPath, []byte(s), 0o644)
 }
