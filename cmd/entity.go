@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,9 +55,6 @@ var entityCmd = &cobra.Command{
 		filePath := filepath.Join(dir, name+".java")
 
 		imports := []string{"jakarta.persistence.Entity", "jakarta.persistence.Id", "jakarta.persistence.GeneratedValue", "jakarta.persistence.GenerationType"}
-		bodyFields := []string{"    @Id", "    @GeneratedValue(strategy = GenerationType.IDENTITY)", "    private Long id;"}
-		getters := []string{"    public Long getId() {", "        return id;", "    }"}
-		setters := []string{"    public void setId(Long id) {", "        this.id = id;", "    }"}
 
 		if entityAuditing {
 			imports = append(imports,
@@ -67,7 +63,6 @@ var entityCmd = &cobra.Command{
 				"org.springframework.data.annotation.LastModifiedDate",
 				"org.springframework.data.jpa.domain.support.AuditingEntityListener",
 			)
-			bodyFields = append(bodyFields, "", "    // Auditing fields", "    @CreatedDate", "    private java.time.Instant createdAt;", "", "    @LastModifiedDate", "    private java.time.Instant updatedAt;")
 		}
 
 		if entityLombok {
@@ -75,57 +70,31 @@ var entityCmd = &cobra.Command{
 		}
 
 		// parse additional fields
+		var fields []entityField
 		if strings.TrimSpace(entityFields) != "" {
-			parsed := parseFields(entityFields)
-			for _, f := range parsed {
+			for _, f := range parseFields(entityFields) {
 				imports = append(imports, f.importPkg...)
-				bodyFields = append(bodyFields, "", fmt.Sprintf("    private %s %s;", f.goType, f.name))
-				if !entityLombok {
-					// add getter
-					getters = append(getters, "", fmt.Sprintf("    public %s get%s() {", f.goType, exportName(f.name)), fmt.Sprintf("        return %s;", f.name), "    }")
-					// add setter
-					setters = append(setters, "", fmt.Sprintf("    public void set%s(%s %s) {", exportName(f.name), f.goType, f.name), fmt.Sprintf("        this.%s = %s;", f.name, f.name), "    }")
-				}
+				fields = append(fields, entityField{Type: f.goType, Name: f.name, Cap: exportName(f.name)})
 			}
 		}
 
 		// remove duplicate imports
 		imports = uniqueStrings(imports)
 
-		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("package %s.entity;\n\n", pkg))
-		for _, im := range imports {
-			sb.WriteString(fmt.Sprintf("import %s;\n", im))
+		content, err := renderTemplate("entity", entityData{
+			Pkg:      pkg,
+			Name:     name,
+			Imports:  imports,
+			Auditing: entityAuditing,
+			Lombok:   entityLombok,
+			Fields:   fields,
+		})
+		if err != nil {
+			Error("failed to render entity template: %v\n", err)
+			return
 		}
-		sb.WriteString("\n")
-		if entityAuditing {
-			sb.WriteString("@EntityListeners(AuditingEntityListener.class)\n")
-		}
-		sb.WriteString("@Entity\n")
-		sb.WriteString(fmt.Sprintf("public class %s {\n", name))
-		for _, l := range bodyFields {
-			sb.WriteString(l)
-			sb.WriteString("\n")
-		}
-		sb.WriteString("\n")
-		if !entityLombok {
-			for _, g := range getters {
-				sb.WriteString(g)
-				sb.WriteString("\n")
-			}
-			sb.WriteString("\n")
-			for _, s := range setters {
-				sb.WriteString(s)
-				sb.WriteString("\n")
-			}
-		} else {
-			// Lombok annotations
-			sb.WriteString("\n")
-			sb.WriteString("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n")
-		}
-		sb.WriteString("}\n")
 
-		if err := os.WriteFile(filePath, []byte(sb.String()), 0o644); err != nil {
+		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 			Error("failed to write entity file: %v\n", err)
 			return
 		}
@@ -165,6 +134,23 @@ type parsedField struct {
 	name      string
 	goType    string
 	importPkg []string
+}
+
+// entityField is a single field rendered by the entity template.
+type entityField struct {
+	Type string
+	Name string
+	Cap  string // exported name used for getter/setter identifiers
+}
+
+// entityData is the data model passed to the entity template.
+type entityData struct {
+	Pkg      string
+	Name     string
+	Imports  []string
+	Auditing bool
+	Lombok   bool
+	Fields   []entityField
 }
 
 func parseFields(spec string) []parsedField {

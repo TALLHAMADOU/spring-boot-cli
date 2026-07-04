@@ -35,7 +35,60 @@ var javaTemplates = map[string]string{
 	"test_service":              testServiceTmpl,
 	"test_controller":           testControllerTmpl,
 	"application":               applicationTmpl,
+	"entity":                    entityTmpl,
 }
+
+const entityTmpl = `package {{.Pkg}}.entity;
+
+{{range .Imports}}import {{.}};
+{{end}}
+{{if .Auditing}}@EntityListeners(AuditingEntityListener.class)
+{{end}}@Entity
+{{- if .Lombok}}
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+{{- end}}
+public class {{.Name}} {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+{{- if .Auditing}}
+
+    // Auditing fields
+    @CreatedDate
+    private java.time.Instant createdAt;
+
+    @LastModifiedDate
+    private java.time.Instant updatedAt;
+{{- end}}
+{{- range .Fields}}
+
+    private {{.Type}} {{.Name}};
+{{- end}}
+{{- if not .Lombok}}
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+{{- range .Fields}}
+
+    public {{.Type}} get{{.Cap}}() {
+        return {{.Name}};
+    }
+
+    public void set{{.Cap}}({{.Type}} {{.Name}}) {
+        this.{{.Name}} = {{.Name}};
+    }
+{{- end}}
+{{- end}}
+}
+`
 
 const repositoryTmpl = `package {{.Pkg}}.repository;
 
