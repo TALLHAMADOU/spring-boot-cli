@@ -32,10 +32,17 @@ var installCmd = &cobra.Command{
 		}
 
 		base := filepath.Clean(name)
-		// package (group) to use for generated sources
-		pkg := installPackage
-		if strings.TrimSpace(pkg) == "" {
-			pkg = "com.example"
+		// Maven/Gradle group id.
+		group := installPackage
+		if strings.TrimSpace(group) == "" {
+			group = "com.example"
+		}
+		// Base package for generated sources follows the Spring Initializr
+		// convention (group + artifactId) so that detectBasePackage resolves the
+		// same package when `make` commands run later in this project.
+		pkg := group
+		if seg := sanitizeArtifactID(name); seg != "" {
+			pkg = group + "." + seg
 		}
 		pkgPath := filepath.Join(strings.Split(pkg, ".")...)
 		srcDir := filepath.Join(base, "src", "main", "java", pkgPath)
@@ -65,7 +72,7 @@ var installCmd = &cobra.Command{
     <version>3.2.0</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
-	<groupId>` + pkg + `</groupId>
+	<groupId>` + group + `</groupId>
   <artifactId>` + name + `</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <properties>
@@ -114,7 +121,7 @@ var installCmd = &cobra.Command{
     id 'io.spring.dependency-management' version '1.1.0'
 }
 
-group = '` + pkg + `'
+group = '` + group + `'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
 

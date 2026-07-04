@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+// sanitizeArtifactID converts a Maven/Gradle artifactId into a Java package
+// segment (lowercase, hyphens stripped). Shared by detection and scaffolding so
+// `install:project` and `detectBasePackage` always agree on the base package.
+func sanitizeArtifactID(s string) string {
+	return strings.ToLower(strings.ReplaceAll(strings.TrimSpace(s), "-", ""))
+}
+
 // isSpringProject returns true if pom.xml or build.gradle exists in root
 func isSpringProject(root string) bool {
 	if _, err := os.Stat(filepath.Join(root, "pom.xml")); err == nil {
@@ -42,7 +49,7 @@ func detectBasePackage(root string) string {
 			if gid == "" && p.Parent != nil {
 				gid = strings.TrimSpace(p.Parent.GroupId)
 			}
-			aid := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(p.ArtifactId), "-", ""))
+			aid := sanitizeArtifactID(p.ArtifactId)
 			if gid != "" {
 				base := strings.ToLower(gid)
 				if aid != "" {
@@ -77,7 +84,7 @@ func detectBasePackage(root string) string {
 			gid = strings.TrimSpace(all[len(all)-1][1])
 		}
 		if all := reA.FindAllStringSubmatch(header, -1); len(all) > 0 {
-			aid = strings.ToLower(strings.ReplaceAll(strings.TrimSpace(all[len(all)-1][1]), "-", ""))
+			aid = sanitizeArtifactID(all[len(all)-1][1])
 		}
 		if gid != "" && aid != "" {
 			return strings.ToLower(gid) + "." + aid
