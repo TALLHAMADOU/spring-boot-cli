@@ -34,7 +34,7 @@ func Execute() {
 	}
 }
 
-// Version is set at build time using -ldflags "-X 'github.com/your/module/cmd.Version=1.2.3'"
+// Version is set at build time using -ldflags "-X 'github.com/TALLHAMADOU/spring-boot-cli/cmd.Version=1.2.3'"
 var Version = "dev"
 var showVersion bool
 

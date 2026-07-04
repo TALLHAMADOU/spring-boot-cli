@@ -1,4 +1,4 @@
-module github.com/hamadoutall/spring-cli
+module github.com/TALLHAMADOU/spring-boot-cli
 
 go 1.25.6
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hamadoutall/spring-cli/cmd"
+	"github.com/TALLHAMADOU/spring-boot-cli/cmd"
 )
 
 func main() {
