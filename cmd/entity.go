@@ -196,11 +196,9 @@ func parseFields(spec string) []parsedField {
 				ftype = exportJavaType(kv[1])
 			}
 		}
-		imp := []string{}
-		if strings.Contains(ftype, "java.time") {
-			imp = append(imp, "java.time.Instant")
-		}
-		out = append(out, parsedField{name: fname, goType: ftype, importPkg: imp})
+		// java.time fields are emitted with fully-qualified names in the body
+		// (like the auditing fields), so no separate import entry is needed.
+		out = append(out, parsedField{name: fname, goType: ftype})
 	}
 	return out
 }
