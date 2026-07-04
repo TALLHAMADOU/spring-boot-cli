@@ -20,6 +20,15 @@ func TestBumpSemver(t *testing.T) {
 	if v != "2.0.0" {
 		t.Fatalf("expected 2.0.0 got %s", v)
 	}
+	// Pre-release suffix (Spring's default) must be preserved, not rejected.
+	v, err = bumpSemver("0.0.1-SNAPSHOT", "patch")
+	if err != nil || v != "0.0.2-SNAPSHOT" {
+		t.Fatalf("expected 0.0.2-SNAPSHOT got %s err %v", v, err)
+	}
+	v, _ = bumpSemver("1.4.2-SNAPSHOT", "minor")
+	if v != "1.5.0-SNAPSHOT" {
+		t.Fatalf("expected 1.5.0-SNAPSHOT got %s", v)
+	}
 }
 
 func TestDetectVersionInPOMandSet(t *testing.T) {

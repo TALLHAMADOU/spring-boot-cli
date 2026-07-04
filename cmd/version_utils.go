@@ -134,11 +134,19 @@ func detectVersionInBuildFiles(root string) (string, string, error) {
 	return "", "", fmt.Errorf("no version detected in pom.xml or build.gradle")
 }
 
-// bumpSemver increments a semver string (simple x.y.z)
+// bumpSemver increments a semver string (major.minor.patch). Any pre-release or
+// build suffix (e.g. "-SNAPSHOT", "+build") is stripped before parsing and
+// re-appended to the result, so "0.0.1-SNAPSHOT" bumps to "0.0.2-SNAPSHOT".
 func bumpSemver(v, kind string) (string, error) {
 	orig := strings.TrimSpace(v)
 	orig = strings.TrimPrefix(orig, "v")
-	parts := strings.Split(orig, ".")
+	core := orig
+	suffix := ""
+	if i := strings.IndexAny(core, "-+"); i >= 0 {
+		suffix = core[i:]
+		core = core[:i]
+	}
+	parts := strings.Split(core, ".")
 	for len(parts) < 3 {
 		parts = append(parts, "0")
 	}
@@ -167,5 +175,5 @@ func bumpSemver(v, kind string) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown bump kind: %s", kind)
 	}
-	return fmt.Sprintf("%d.%d.%d", major, minor, patch), nil
+	return fmt.Sprintf("%d.%d.%d", major, minor, patch) + suffix, nil
 }
