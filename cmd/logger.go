@@ -14,27 +14,54 @@ const (
 	colorBlue   = "\033[34m"
 )
 
-func formatMsg(format string, a ...interface{}) string {
+// colorEnabled reports whether ANSI colors should be written to f. Colors are
+// disabled when NO_COLOR is set (https://no-color.org) or the stream is not a
+// terminal (e.g. piped or redirected output), avoiding garbled escape codes.
+func colorEnabled(f *os.File) bool {
+	if os.Getenv("NO_COLOR") != "" {
+		return false
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeCharDevice != 0
+}
+
+// Evaluated once at startup so the TTY check is not repeated on every log call.
+var (
+	stdoutColor = colorEnabled(os.Stdout)
+	stderrColor = colorEnabled(os.Stderr)
+)
+
+func colorize(enabled bool, color, s string) string {
+	if !enabled {
+		return s
+	}
+	return color + s + colorReset
+}
+
+func formatMsg(format string, a ...any) string {
 	msg := fmt.Sprintf(format, a...)
 	return strings.TrimSuffix(msg, "\n")
 }
 
-// Success prints a green success message
-func Success(format string, a ...interface{}) {
-	fmt.Printf("%s✅ SUCCESS: %s%s\n", colorGreen, formatMsg(format, a...), colorReset)
+// Success prints a green success message to stdout.
+func Success(format string, a ...any) {
+	fmt.Fprintln(os.Stdout, colorize(stdoutColor, colorGreen, "✅ SUCCESS: "+formatMsg(format, a...)))
 }
 
-// Error prints a red error message to stderr
-func Error(format string, a ...interface{}) {
-	fmt.Fprintf(os.Stderr, "%s❌ ERROR: %s%s\n", colorRed, formatMsg(format, a...), colorReset)
+// Error prints a red error message to stderr.
+func Error(format string, a ...any) {
+	fmt.Fprintln(os.Stderr, colorize(stderrColor, colorRed, "❌ ERROR: "+formatMsg(format, a...)))
 }
 
-// Warning prints a yellow warning message
-func Warning(format string, a ...interface{}) {
-	fmt.Printf("%s⚠️ WARNING: %s%s\n", colorYellow, formatMsg(format, a...), colorReset)
+// Warning prints a yellow warning message to stdout.
+func Warning(format string, a ...any) {
+	fmt.Fprintln(os.Stdout, colorize(stdoutColor, colorYellow, "⚠️ WARNING: "+formatMsg(format, a...)))
 }
 
-// Info prints a blue info message
-func Info(format string, a ...interface{}) {
-	fmt.Printf("%sℹ️ INFO: %s%s\n", colorBlue, formatMsg(format, a...), colorReset)
+// Info prints a blue info message to stdout.
+func Info(format string, a ...any) {
+	fmt.Fprintln(os.Stdout, colorize(stdoutColor, colorBlue, "ℹ️ INFO: "+formatMsg(format, a...)))
 }
