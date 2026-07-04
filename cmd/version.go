@@ -88,9 +88,16 @@ var versionCmd = &cobra.Command{
 		Success("Updated version to %s\n", newVer)
 
 		if versionCommit {
-			_ = exec.Command("git", "add", "pom.xml", "build.gradle").Run()
-			msg := "chore: bump version to " + newVer
-			if err := exec.Command("git", "commit", "-m", msg).Run(); err != nil {
+			// Stage only the build file we actually modified; `git add` aborts on a
+			// non-matching pathspec, so passing both would stage nothing on a
+			// single-build-tool project.
+			buildFile := "pom.xml"
+			if kind == "gradle" {
+				buildFile = "build.gradle"
+			}
+			if err := exec.Command("git", "add", buildFile).Run(); err != nil {
+				Error("git add failed: %v\n", err)
+			} else if err := exec.Command("git", "commit", "-m", "chore: bump version to "+newVer).Run(); err != nil {
 				Error("git commit failed: %v\n", err)
 			} else {
 				Success("Committed version change")
