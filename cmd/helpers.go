@@ -104,10 +104,10 @@ func ensureService(pkg, serviceName, entity string) error {
 // suffix: class name suffix (e.g. "Dto", "Request"), fieldsSpec: "name:Type,..." pairs.
 func generatePojoContent(name, pkg, subPkg, suffix, fieldsSpec string) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("package %s.%s;\n\n", pkg, subPkg))
-	sb.WriteString(fmt.Sprintf("public class %s%s {\n", name, suffix))
+	fmt.Fprintf(&sb, "package %s.%s;\n\n", pkg, subPkg)
+	fmt.Fprintf(&sb, "public class %s%s {\n", name, suffix)
 	if strings.TrimSpace(fieldsSpec) != "" {
-		for _, p := range strings.Split(fieldsSpec, ",") {
+		for p := range strings.SplitSeq(fieldsSpec, ",") {
 			p = strings.TrimSpace(p)
 			if p == "" {
 				continue
@@ -118,10 +118,10 @@ func generatePojoContent(name, pkg, subPkg, suffix, fieldsSpec string) string {
 			if len(kv) == 2 {
 				ftype = exportJavaType(strings.TrimSpace(kv[1]))
 			}
-			sb.WriteString(fmt.Sprintf("    private %s %s;\n", ftype, fname))
-			sb.WriteString(fmt.Sprintf("    public %s get%s() { return %s; }\n", ftype, exportName(fname), fname))
-			sb.WriteString(fmt.Sprintf("    public void set%s(%s %s) { this.%s = %s; }\n",
-				exportName(fname), ftype, fname, fname, fname))
+			fmt.Fprintf(&sb, "    private %s %s;\n", ftype, fname)
+			fmt.Fprintf(&sb, "    public %s get%s() { return %s; }\n", ftype, exportName(fname), fname)
+			fmt.Fprintf(&sb, "    public void set%s(%s %s) { this.%s = %s; }\n",
+				exportName(fname), ftype, fname, fname, fname)
 		}
 	}
 	sb.WriteString("}\n")

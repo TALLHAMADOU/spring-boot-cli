@@ -62,17 +62,11 @@ func detectBasePackage(root string) string {
 		// fallback: try tolerant regex-based extraction (handles default namespace and parent blocks)
 		s := string(data)
 		// limit search to the header section (before <dependencies>) to avoid plugin/groupId occurrences
-		depIdx := strings.Index(s, "<dependencies")
-		header := s
-		if depIdx >= 0 {
-			header = s[:depIdx]
-		}
+		header, _, _ := strings.Cut(s, "<dependencies")
 		// remove parent block from header if present
-		if strings.Contains(header, "<parent") {
-			start := strings.Index(header, "<parent")
-			end := strings.Index(header, "</parent>")
-			if start >= 0 && end > start {
-				header = header[:start] + header[end+len("</parent>"):]
+		if before, rest, found := strings.Cut(header, "<parent"); found {
+			if _, after, closed := strings.Cut(rest, "</parent>"); closed {
+				header = before + after
 			}
 		}
 		reG := regexp.MustCompile(`<groupId>\s*([^<\s]+)\s*</groupId>`)

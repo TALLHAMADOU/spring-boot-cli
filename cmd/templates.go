@@ -7,7 +7,7 @@ import (
 )
 
 // renderTemplate parses and executes a named Java source template with the given data.
-func renderTemplate(name string, data interface{}) (string, error) {
+func renderTemplate(name string, data any) (string, error) {
 	tmplStr, ok := javaTemplates[name]
 	if !ok {
 		return "", fmt.Errorf("template %q not found", name)
