@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,19 +16,24 @@ var (
 	entityLombok   bool
 	entityAuditing bool
 	entityPackage  string
+	entityUUID     bool
 )
 
 var entityCmd = &cobra.Command{
 	Use:   "entity [name]",
 	Short: "Generate a JPA entity class",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		raw := args[0]
 		if raw == "" {
-			Error("entity name is required")
-			return
+			return errors.New("entity name is required")
 		}
 		name := exportName(raw)
+
+		// ensure we are in a Spring Boot project
+		if err := requireSpringProject(); err != nil {
+			return err
+		}
 
 		// detect base package from project files (pom.xml / build.gradle)
 		detected := detectBasePackage(".")
@@ -40,16 +47,9 @@ var entityCmd = &cobra.Command{
 			pkg = entityPackage
 		}
 
-		// ensure we are in a Spring Boot project
-		if !isSpringProject(".") {
-			Error("Erreur: Lancez dans un projet Spring Boot avec pom.xml ou build.gradle")
-			os.Exit(1)
-		}
-
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "entity")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			Error("failed to create directories: %v\n", err)
-			return
+			return fmt.Errorf("création des dossiers: %w", err)
 		}
 
 		filePath := filepath.Join(dir, name+".java")
@@ -87,16 +87,15 @@ var entityCmd = &cobra.Command{
 			Imports:  imports,
 			Auditing: entityAuditing,
 			Lombok:   entityLombok,
+			UUID:     entityUUID,
 			Fields:   fields,
 		})
 		if err != nil {
-			Error("failed to render entity template: %v\n", err)
-			return
+			return fmt.Errorf("rendu du template entity: %w", err)
 		}
 
 		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
-			Error("failed to write entity file: %v\n", err)
-			return
+			return fmt.Errorf("écriture du fichier entity: %w", err)
 		}
 
 		// If lombok requested, try to add dependency to project's pom.xml or build.gradle in current working dir
@@ -110,6 +109,7 @@ var entityCmd = &cobra.Command{
 		}
 
 		Success("Created entity: %s\n", filePath)
+		return nil
 	},
 }
 
@@ -118,6 +118,7 @@ func init() {
 	entityCmd.Flags().BoolVar(&entityLombok, "lombok", false, "use Lombok annotations instead of getters/setters")
 	entityCmd.Flags().BoolVar(&entityAuditing, "auditing", false, "add createdAt/updatedAt auditing fields")
 	entityCmd.Flags().StringVar(&entityPackage, "package", "", "base package override (e.g. com.example.app)")
+	entityCmd.Flags().BoolVar(&entityUUID, "uuid", false, "use UUID instead of Long for the primary key")
 	makeCmd.AddCommand(entityCmd)
 }
 
@@ -150,6 +151,7 @@ type entityData struct {
 	Imports  []string
 	Auditing bool
 	Lombok   bool
+	UUID     bool
 	Fields   []entityField
 }
 

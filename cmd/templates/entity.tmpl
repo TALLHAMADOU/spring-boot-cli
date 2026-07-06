@@ -12,8 +12,13 @@ package {{.Pkg}}.entity;
 {{- end}}
 public class {{.Name}} {
     @Id
+{{- if .UUID}}
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private java.util.UUID id;
+{{- else}}
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+{{- end}}
 {{- if .Auditing}}
 
     // Auditing fields
@@ -28,7 +33,15 @@ public class {{.Name}} {
     private {{.Type}} {{.Name}};
 {{- end}}
 {{- if not .Lombok}}
+{{- if .UUID}}
+    public java.util.UUID getId() {
+        return id;
+    }
 
+    public void setId(java.util.UUID id) {
+        this.id = id;
+    }
+{{- else}}
     public Long getId() {
         return id;
     }
@@ -36,6 +49,7 @@ public class {{.Name}} {
     public void setId(Long id) {
         this.id = id;
     }
+{{- end}}
 {{- range .Fields}}
 
     public {{.Type}} get{{.Cap}}() {
