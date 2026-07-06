@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,40 +19,38 @@ var testServiceCmd = &cobra.Command{
 	Use:   "service [name]",
 	Short: "Generate a JUnit test skeleton for a service",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		raw := args[0]
 		if raw == "" {
-			Error("service name is required")
-			return
+			return errors.New("service name is required")
 		}
 		name := exportName(raw)
-		if !isSpringProject(".") {
-			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
-			os.Exit(1)
+		if err := requireSpringProject(); err != nil {
+			return err
 		}
 
 		pkg := getEffectivePackage(".", installPackage, testServicePackage)
 
 		dir := filepath.Join("src", "test", "java", filepath.Join(strings.Split(pkg, ".")...), "service")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			Error("failed to create directories: %v\n", err)
-			return
+			return fmt.Errorf("création des dossiers: %w", err)
 		}
 
 		file := filepath.Join(dir, name+"ServiceTest.java")
+		fields := readEntityFields(pkg, name)
 		content, err := renderTemplate("test_service", struct {
-			Pkg  string
-			Name string
-		}{Pkg: pkg, Name: name})
+			Pkg    string
+			Name   string
+			Fields []parsedField
+		}{Pkg: pkg, Name: name, Fields: fields})
 		if err != nil {
-			Error("failed to render test template: %v\n", err)
-			return
+			return fmt.Errorf("rendu du template de test: %w", err)
 		}
 		if err := os.WriteFile(file, []byte(content), 0o644); err != nil {
-			Error("failed to write test file: %v\n", err)
-			return
+			return fmt.Errorf("écriture du fichier de test: %w", err)
 		}
 		Success("Created service test: %s\n", file)
+		return nil
 	},
 }
 
@@ -58,40 +58,38 @@ var testControllerCmd = &cobra.Command{
 	Use:   "controller [name]",
 	Short: "Generate a JUnit test skeleton for a controller",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		raw := args[0]
 		if raw == "" {
-			Error("controller name is required")
-			return
+			return errors.New("controller name is required")
 		}
 		name := exportName(raw)
-		if !isSpringProject(".") {
-			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
-			os.Exit(1)
+		if err := requireSpringProject(); err != nil {
+			return err
 		}
 
 		pkg := getEffectivePackage(".", installPackage, testControllerPackage)
 
 		dir := filepath.Join("src", "test", "java", filepath.Join(strings.Split(pkg, ".")...), "controller")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			Error("failed to create directories: %v\n", err)
-			return
+			return fmt.Errorf("création des dossiers: %w", err)
 		}
 
 		file := filepath.Join(dir, name+"ControllerTest.java")
+		fields := readEntityFields(pkg, name)
 		content, err := renderTemplate("test_controller", struct {
-			Pkg  string
-			Name string
-		}{Pkg: pkg, Name: name})
+			Pkg    string
+			Name   string
+			Fields []parsedField
+		}{Pkg: pkg, Name: name, Fields: fields})
 		if err != nil {
-			Error("failed to render test template: %v\n", err)
-			return
+			return fmt.Errorf("rendu du template de test: %w", err)
 		}
 		if err := os.WriteFile(file, []byte(content), 0o644); err != nil {
-			Error("failed to write test file: %v\n", err)
-			return
+			return fmt.Errorf("écriture du fichier de test: %w", err)
 		}
 		Success("Created controller test: %s\n", file)
+		return nil
 	},
 }
 

@@ -18,7 +18,10 @@ func renderTemplate(name string, data any) (string, error) {
 		return "", fmt.Errorf("template %q not found: %w", name, err)
 	}
 
-	tmpl, err := template.New(name).Parse(string(tmplContent))
+	funcMap := template.FuncMap{
+		"exportName": exportName,
+	}
+	tmpl, err := template.New(name).Funcs(funcMap).Parse(string(tmplContent))
 	if err != nil {
 		return "", fmt.Errorf("parse template %q: %w", name, err)
 	}

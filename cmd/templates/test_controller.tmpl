@@ -19,7 +19,13 @@ public class {{.Name}}ControllerTest {
 
     @Test
     void testGetAll() throws Exception {
-        // TODO: implement MockMvc test
+        // {{.Name}} entity = new {{.Name}}();
+{{- range .Fields}}
+        // entity.set{{.Name | exportName}}(...);
+{{- end}}
+        
+        // TODO: implement MockMvc test and assert json path
+        // when(service.findAll()).thenReturn(List.of(entity));
         assertThat(mockMvc).isNotNull();
     }
 }

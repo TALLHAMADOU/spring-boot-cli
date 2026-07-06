@@ -162,8 +162,8 @@ func exportName(s string) string {
 }
 
 type parsedField struct {
-	name      string
-	goType    string
+	Name      string
+	Type      string
 	importPkg []string
 }
 
@@ -243,7 +243,7 @@ func parseFields(spec string) []parsedField {
 		}
 		// java.time fields are emitted with fully-qualified names in the body
 		// (like the auditing fields), so no separate import entry is needed.
-		out = append(out, parsedField{name: fname, goType: ftype})
+		out = append(out, parsedField{Name: fname, Type: ftype})
 	}
 	return out
 }

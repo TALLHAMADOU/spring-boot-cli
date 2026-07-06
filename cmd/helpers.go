@@ -154,7 +154,7 @@ func readEntityFields(pkg, entity string) []parsedField {
 			t := m[1]
 			n := m[2]
 			// ignore synthetic/auditing or id types handled elsewhere
-			out = append(out, parsedField{name: n, goType: t})
+			out = append(out, parsedField{Name: n, Type: t})
 		}
 	}
 	return out

@@ -20,7 +20,13 @@ public class {{.Name}}ServiceTest {
 
     @Test
     void testFindAll() {
-        // TODO: implement test
-        // assertThat(service.findAll()).isEmpty();
+        {{.Name}} entity = new {{.Name}}();
+{{- range .Fields}}
+        // entity.set{{.Name | exportName}}(...);
+{{- end}}
+        
+        // TODO: mock repository behavior and assert results
+        // when(repository.findAll()).thenReturn(List.of(entity));
+        // assertThat(service.findAll()).isNotEmpty();
     }
 }
