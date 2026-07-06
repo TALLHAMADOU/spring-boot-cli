@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://spring.io/images/spring-logo-9146a4d3298760c2e7e49595184e1975.svg" alt="Spring Logo" width="200"/>
+  <img src="assets/logo.jpg" alt="Spring Logo" width="200"/>
   <h1>⚡ Spring-CLI</h1>
   <p><strong>Un générateur ultra-rapide pour Spring Boot, écrit en Go.</strong></p>
   
@@ -73,8 +73,24 @@ spring-cli make controller User --entity User --crud
 
 ### 🧪 4. Générer des DTOs & Tests
 ```bash
-spring-cli make dto User --fields "firstName:String, lastName:String"
+# Génère un DTO avec son Mapper MapStruct
+spring-cli make dto User --fields "firstName:String, lastName:String" --mapper
+
+# Génère des tests basés sur les champs de l'entité
 spring-cli make test service User
+```
+
+### 🐳 5. Générer une configuration Docker
+Générez un `Dockerfile` optimisé et un `docker-compose.yml` incluant la base de données de votre choix :
+
+```bash
+spring-cli make docker --db postgres --port 8080 --jdk 17
+```
+
+### 🚨 6. Gestion Globale des Exceptions
+```bash
+# Génère un ControllerAdvice avec les gestionnaires d'erreurs standards (400, 404, etc.)
+spring-cli make exception-handler
 ```
 
 ---
@@ -84,13 +100,15 @@ spring-cli make test service User
 | Commande | Description | Flags Principaux |
 |----------|-------------|------------------|
 | `install:project` | Initialise un projet Maven ou Gradle. | `--name`, `--package` |
-| `make entity` | Génère une Entité JPA. | `--fields`, `--lombok`, `--package` |
-| `make repository`| Génère une interface JpaRepository. | `--package` |
-| `make service` | Génère un Service (Interface + Impl). | `--entity`, `--package` |
-| `make controller`| Génère un RestController. | `--crud`, `--entity`, `--package` |
-| `make dto` | Génère un DTO (Data Transfer Object). | `--fields`, `--package` |
-| `make test` | Génère des squelettes de tests JUnit (Service/Controller).| |
-| `version` | Gère le versioning sémantique de votre `pom.xml` / `build.gradle`. | `--bump`, `--set`, `--tag` |
+| `make entity` | Génère une Entité JPA. | `--fields`, `--lombok`, `--uuid`, `--validate`, `--has-many` |
+| `make repository`| Génère une interface JpaRepository. | `--uuid` |
+| `make service` | Génère un Service (Interface + Impl). | `--entity` |
+| `make controller`| Génère un RestController. | `--crud`, `--entity`, `--validate` |
+| `make dto` | Génère un DTO (Data Transfer Object). | `--fields`, `--mapper`, `--validate` |
+| `make test` | Génère des squelettes de tests JUnit. | |
+| `make docker` | Génère un Dockerfile et docker-compose.yml. | `--db`, `--port`, `--jdk` |
+| `make exception-handler`| Génère un `@ControllerAdvice`. | |
+| `version` | Gère le versioning sémantique. | `--bump`, `--set`, `--tag` |
 
 ---
 
