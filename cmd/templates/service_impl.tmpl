@@ -1,0 +1,45 @@
+package {{.Pkg}}.service.impl;
+
+import java.util.*;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import {{.Pkg}}.service.{{.Name}}Service;
+import {{.Pkg}}.entity.{{.Entity}};
+import {{.Pkg}}.repository.{{.Entity}}Repository;
+
+@Service
+public class {{.Name}}ServiceImpl implements {{.Name}}Service {
+
+    private final {{.Entity}}Repository repository;
+
+    @Autowired
+    public {{.Name}}ServiceImpl({{.Entity}}Repository repository) {
+        this.repository = repository;
+    }
+
+    @Override
+    public List<{{.Entity}}> findAll() {
+        return repository.findAll();
+    }
+
+    @Override
+    public Optional<{{.Entity}}> findById(Long id) {
+        return repository.findById(id);
+    }
+
+    @Override
+    public {{.Entity}} save({{.Entity}} entity) {
+        return repository.save(entity);
+    }
+
+    @Override
+    public Optional<{{.Entity}}> update(Long id, {{.Entity}} entity) {
+        return repository.findById(id).map(existing -> {
+{{.CopyLines}}        });
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
+}

@@ -1,0 +1,42 @@
+package {{.Pkg}}.controller;
+
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import {{.Pkg}}.entity.{{.Entity}};
+import {{.Pkg}}.service.{{.Entity}}Service;
+import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@RestController
+@RequestMapping("/api/{{.EntityLower}}")
+public class {{.Name}}Controller {
+
+    @Autowired
+    private {{.Entity}}Service service;
+
+    @GetMapping
+    public List<{{.Entity}}> list() {
+        return service.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<{{.Entity}}> get(@PathVariable Long id) {
+        return service.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public {{.Entity}} create(@RequestBody {{.Entity}} entity) {
+        return service.save(entity);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<{{.Entity}}> update(@PathVariable Long id, @RequestBody {{.Entity}} entity) {
+        return service.update(id, entity).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+}

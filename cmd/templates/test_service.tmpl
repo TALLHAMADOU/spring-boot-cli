@@ -1,0 +1,26 @@
+package {{.Pkg}}.service;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import static org.assertj.core.api.Assertions.assertThat;
+import {{.Pkg}}.service.impl.{{.Name}}ServiceImpl;
+
+@ExtendWith(MockitoExtension.class)
+public class {{.Name}}ServiceTest {
+
+    @Mock
+    // TODO: Replace Object with your actual repository type, e.g.: {{.Name}}Repository repository;
+    private Object repository;
+
+    @InjectMocks
+    private {{.Name}}ServiceImpl service;
+
+    @Test
+    void testFindAll() {
+        // TODO: implement test
+        // assertThat(service.findAll()).isEmpty();
+    }
+}

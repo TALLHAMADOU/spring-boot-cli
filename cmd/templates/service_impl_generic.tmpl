@@ -1,0 +1,37 @@
+package {{.Pkg}}.service.impl;
+
+import java.util.*;
+import org.springframework.stereotype.Service;
+import {{.Pkg}}.service.{{.Name}}Service;
+
+/**
+ * Generic service implementation for {{.Name}}.
+ * TODO: Inject your repository and replace Object with your actual domain type.
+ */
+@Service
+public class {{.Name}}ServiceImpl implements {{.Name}}Service {
+
+    @Override
+    public List<Object> findAll() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Optional<Object> findById(Long id) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Object save(Object entity) {
+        return entity;
+    }
+
+    @Override
+    public Optional<Object> update(Long id, Object entity) {
+        return Optional.empty();
+    }
+
+    @Override
+    public void deleteById(Long id) {
+    }
+}

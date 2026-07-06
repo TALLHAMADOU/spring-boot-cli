@@ -1,0 +1,13 @@
+package {{.Pkg}}.service;
+
+import java.util.List;
+import java.util.Optional;
+import {{.Pkg}}.entity.{{.Entity}};
+
+public interface {{.Name}}Service {
+    List<{{.Entity}}> findAll();
+    Optional<{{.Entity}}> findById(Long id);
+    {{.Entity}} save({{.Entity}} entity);
+    Optional<{{.Entity}}> update(Long id, {{.Entity}} entity);
+    void deleteById(Long id);
+}

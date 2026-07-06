@@ -1,0 +1,16 @@
+package {{.Pkg}}.service;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Generic service interface for {{.Name}}.
+ * TODO: Replace Object with your actual domain type and inject the appropriate repository.
+ */
+public interface {{.Name}}Service {
+    List<Object> findAll();
+    Optional<Object> findById(Long id);
+    Object save(Object entity);
+    Optional<Object> update(Long id, Object entity);
+    void deleteById(Long id);
+}

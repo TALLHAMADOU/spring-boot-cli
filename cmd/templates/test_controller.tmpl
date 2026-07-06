@@ -1,0 +1,25 @@
+package {{.Pkg}}.controller;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
+
+@WebMvcTest({{.Name}}Controller.class)
+public class {{.Name}}ControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    // TODO: Replace Object with your actual service type, e.g.: {{.Name}}Service service;
+    private Object service;
+
+    @Test
+    void testGetAll() throws Exception {
+        // TODO: implement MockMvc test
+        assertThat(mockMvc).isNotNull();
+    }
+}
