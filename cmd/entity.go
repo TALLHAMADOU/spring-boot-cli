@@ -14,10 +14,13 @@ import (
 var (
 	entityFields   string
 	entityLombok   bool
-	entityAuditing bool
-	entityPackage  string
-	entityUUID     bool
-	entityValidate bool
+	entityAuditing  bool
+	entityPackage   string
+	entityUUID      bool
+	entityValidate  bool
+	entityHasMany   string
+	entityBelongsTo string
+	entityHasOne    string
 )
 
 var entityCmd = &cobra.Command{
@@ -83,18 +86,35 @@ var entityCmd = &cobra.Command{
 			}
 		}
 
+		hasManyFields := parseRelation(entityHasMany, "List<%s>", "s")
+		belongsToFields := parseRelation(entityBelongsTo, "%s", "")
+		hasOneFields := parseRelation(entityHasOne, "%s", "")
+
+		if len(hasManyFields) > 0 {
+			imports = append(imports, "jakarta.persistence.OneToMany", "java.util.List")
+		}
+		if len(belongsToFields) > 0 {
+			imports = append(imports, "jakarta.persistence.ManyToOne")
+		}
+		if len(hasOneFields) > 0 {
+			imports = append(imports, "jakarta.persistence.OneToOne")
+		}
+
 		// remove duplicate imports
 		imports = uniqueStrings(imports)
 
 		content, err := renderTemplate("entity", entityData{
-			Pkg:      pkg,
-			Name:     name,
-			Imports:  imports,
-			Auditing: entityAuditing,
-			Lombok:   entityLombok,
-			UUID:     entityUUID,
-			Validate: entityValidate,
-			Fields:   fields,
+			Pkg:       pkg,
+			Name:      name,
+			Imports:   imports,
+			Auditing:  entityAuditing,
+			Lombok:    entityLombok,
+			UUID:      entityUUID,
+			Validate:  entityValidate,
+			Fields:    fields,
+			HasMany:   hasManyFields,
+			BelongsTo: belongsToFields,
+			HasOne:    hasOneFields,
 		})
 		if err != nil {
 			return fmt.Errorf("rendu du template entity: %w", err)
@@ -126,6 +146,9 @@ func init() {
 	entityCmd.Flags().StringVar(&entityPackage, "package", "", "base package override (e.g. com.example.app)")
 	entityCmd.Flags().BoolVar(&entityUUID, "uuid", false, "use UUID instead of Long for the primary key")
 	entityCmd.Flags().BoolVar(&entityValidate, "validate", false, "add Jakarta validation annotations (@NotBlank, @NotNull)")
+	entityCmd.Flags().StringVar(&entityHasMany, "has-many", "", "comma-separated entities (e.g. Order,Item)")
+	entityCmd.Flags().StringVar(&entityBelongsTo, "belongs-to", "", "comma-separated entities (e.g. User,Category)")
+	entityCmd.Flags().StringVar(&entityHasOne, "has-one", "", "comma-separated entities (e.g. Profile)")
 	makeCmd.AddCommand(entityCmd)
 }
 
@@ -158,9 +181,35 @@ type entityData struct {
 	Imports  []string
 	Auditing bool
 	Lombok   bool
-	UUID     bool
-	Validate bool
-	Fields   []entityField
+	UUID      bool
+	Validate  bool
+	Fields    []entityField
+	HasMany   []relationField
+	BelongsTo []relationField
+	HasOne    []relationField
+}
+
+type relationField struct {
+	Type   string
+	Entity string
+	Name   string
+	Cap    string
+}
+
+func parseRelation(spec, typeFormat, nameSuffix string) []relationField {
+	parts := strings.Split(spec, ",")
+	out := make([]relationField, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		entityName := exportName(p)
+		fieldName := strings.ToLower(string(p[0])) + p[1:] + nameSuffix
+		fieldType := fmt.Sprintf(typeFormat, entityName)
+		out = append(out, relationField{Type: fieldType, Entity: entityName, Name: fieldName, Cap: exportName(fieldName)})
+	}
+	return out
 }
 
 func parseFields(spec string) []parsedField {

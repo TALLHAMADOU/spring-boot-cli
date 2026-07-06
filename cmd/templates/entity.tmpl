@@ -39,6 +39,21 @@ public class {{.Name}} {
 {{- end}}
     private {{.Type}} {{.Name}};
 {{- end}}
+{{- range .HasMany}}
+
+    @OneToMany(mappedBy = "{{$.Name | lower}}")
+    private {{.Type}} {{.Name}};
+{{- end}}
+{{- range .BelongsTo}}
+
+    @ManyToOne
+    private {{.Type}} {{.Name}};
+{{- end}}
+{{- range .HasOne}}
+
+    @OneToOne
+    private {{.Type}} {{.Name}};
+{{- end}}
 {{- if not .Lombok}}
 {{- if .UUID}}
     public java.util.UUID getId() {
@@ -58,6 +73,36 @@ public class {{.Name}} {
     }
 {{- end}}
 {{- range .Fields}}
+
+    public {{.Type}} get{{.Cap}}() {
+        return {{.Name}};
+    }
+
+    public void set{{.Cap}}({{.Type}} {{.Name}}) {
+        this.{{.Name}} = {{.Name}};
+    }
+{{- end}}
+{{- range .HasMany}}
+
+    public {{.Type}} get{{.Cap}}() {
+        return {{.Name}};
+    }
+
+    public void set{{.Cap}}({{.Type}} {{.Name}}) {
+        this.{{.Name}} = {{.Name}};
+    }
+{{- end}}
+{{- range .BelongsTo}}
+
+    public {{.Type}} get{{.Cap}}() {
+        return {{.Name}};
+    }
+
+    public void set{{.Cap}}({{.Type}} {{.Name}}) {
+        this.{{.Name}} = {{.Name}};
+    }
+{{- end}}
+{{- range .HasOne}}
 
     public {{.Type}} get{{.Cap}}() {
         return {{.Name}};
