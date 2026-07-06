@@ -30,6 +30,13 @@ public class {{.Name}} {
 {{- end}}
 {{- range .Fields}}
 
+{{- if $.Validate}}
+{{- if eq .Type "String"}}
+    @NotBlank
+{{- else}}
+    @NotNull
+{{- end}}
+{{- end}}
     private {{.Type}} {{.Name}};
 {{- end}}
 {{- if not .Lombok}}

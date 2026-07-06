@@ -6,6 +6,9 @@ import {{.Pkg}}.entity.{{.Entity}};
 import {{.Pkg}}.service.{{.Entity}}Service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+{{- if $.Validate}}
+import jakarta.validation.Valid;
+{{- end}}
 
 @RestController
 @RequestMapping("/api/{{.EntityLower}}")
@@ -25,12 +28,12 @@ public class {{.Name}}Controller {
     }
 
     @PostMapping
-    public {{.Entity}} create(@RequestBody {{.Entity}} entity) {
+    public {{.Entity}} create({{- if $.Validate}}@Valid {{- end}}@RequestBody {{.Entity}} entity) {
         return service.save(entity);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<{{.Entity}}> update(@PathVariable Long id, @RequestBody {{.Entity}} entity) {
+    public ResponseEntity<{{.Entity}}> update(@PathVariable Long id, {{- if $.Validate}}@Valid {{- end}}@RequestBody {{.Entity}} entity) {
         return service.update(id, entity).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 

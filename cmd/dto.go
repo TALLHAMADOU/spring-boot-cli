@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,47 +10,48 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dtoFields string
-var dtoPackage string
+var (
+	dtoFields   string
+	dtoPackage  string
+	dtoValidate bool
+)
 
 var dtoCmd = &cobra.Command{
 	Use:   "dto [name]",
 	Short: "Generate a DTO class",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		raw := args[0]
 		if raw == "" {
-			Error("dto name is required")
-			return
+			return errors.New("dto name is required")
 		}
 		name := exportName(raw)
 
-		if !isSpringProject(".") {
-			Error("Erreur: Lancez cette commande dans un projet Spring Boot (présence de pom.xml ou build.gradle)")
-			os.Exit(1)
+		if err := requireSpringProject(); err != nil {
+			return err
 		}
 
 		pkg := getEffectivePackage(".", installPackage, dtoPackage)
 
 		dir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "dto")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			Error("failed to create directories: %v\n", err)
-			return
+			return fmt.Errorf("création des dossiers: %w", err)
 		}
 
 		filePath := filepath.Join(dir, name+"Dto.java")
-		content := generatePojoContent(name, pkg, "dto", "Dto", dtoFields)
+		content := generatePojoContent(name, pkg, "dto", "Dto", dtoFields, dtoValidate)
 		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
-			Error("failed to write dto file: %v\n", err)
-			return
+			return fmt.Errorf("écriture du fichier dto: %w", err)
 		}
 
 		Success("Created dto: %s\n", filePath)
+		return nil
 	},
 }
 
 func init() {
 	dtoCmd.Flags().StringVar(&dtoFields, "fields", "", "fields like name:String,age:int")
 	dtoCmd.Flags().StringVarP(&dtoPackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
+	dtoCmd.Flags().BoolVar(&dtoValidate, "validate", false, "add Jakarta validation annotations")
 	makeCmd.AddCommand(dtoCmd)
 }

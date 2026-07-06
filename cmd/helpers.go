@@ -102,9 +102,13 @@ func ensureService(pkg, serviceName, entity string) error {
 // generatePojoContent generates a Java POJO class (DTO, Request, etc.) content string.
 // name: capitalized class name, pkg: base package, subPkg: sub-package (e.g. "dto"),
 // suffix: class name suffix (e.g. "Dto", "Request"), fieldsSpec: "name:Type,..." pairs.
-func generatePojoContent(name, pkg, subPkg, suffix, fieldsSpec string) string {
+func generatePojoContent(name, pkg, subPkg, suffix, fieldsSpec string, validate bool) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "package %s.%s;\n\n", pkg, subPkg)
+	if validate {
+		sb.WriteString("import jakarta.validation.constraints.NotBlank;\n")
+		sb.WriteString("import jakarta.validation.constraints.NotNull;\n\n")
+	}
 	fmt.Fprintf(&sb, "public class %s%s {\n", name, suffix)
 	if strings.TrimSpace(fieldsSpec) != "" {
 		for p := range strings.SplitSeq(fieldsSpec, ",") {
@@ -117,6 +121,13 @@ func generatePojoContent(name, pkg, subPkg, suffix, fieldsSpec string) string {
 			ftype := "String"
 			if len(kv) == 2 {
 				ftype = exportJavaType(strings.TrimSpace(kv[1]))
+			}
+			if validate {
+				if ftype == "String" {
+					fmt.Fprintf(&sb, "    @NotBlank\n")
+				} else {
+					fmt.Fprintf(&sb, "    @NotNull\n")
+				}
 			}
 			fmt.Fprintf(&sb, "    private %s %s;\n", ftype, fname)
 			fmt.Fprintf(&sb, "    public %s get%s() { return %s; }\n", ftype, exportName(fname), fname)

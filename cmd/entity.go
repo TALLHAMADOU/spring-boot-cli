@@ -17,6 +17,7 @@ var (
 	entityAuditing bool
 	entityPackage  string
 	entityUUID     bool
+	entityValidate bool
 )
 
 var entityCmd = &cobra.Command{
@@ -65,6 +66,10 @@ var entityCmd = &cobra.Command{
 			)
 		}
 
+		if entityValidate {
+			imports = append(imports, "jakarta.validation.constraints.NotBlank", "jakarta.validation.constraints.NotNull")
+		}
+
 		if entityLombok {
 			imports = append(imports, "lombok.Getter", "lombok.Setter", "lombok.NoArgsConstructor", "lombok.AllArgsConstructor")
 		}
@@ -88,6 +93,7 @@ var entityCmd = &cobra.Command{
 			Auditing: entityAuditing,
 			Lombok:   entityLombok,
 			UUID:     entityUUID,
+			Validate: entityValidate,
 			Fields:   fields,
 		})
 		if err != nil {
@@ -119,6 +125,7 @@ func init() {
 	entityCmd.Flags().BoolVar(&entityAuditing, "auditing", false, "add createdAt/updatedAt auditing fields")
 	entityCmd.Flags().StringVar(&entityPackage, "package", "", "base package override (e.g. com.example.app)")
 	entityCmd.Flags().BoolVar(&entityUUID, "uuid", false, "use UUID instead of Long for the primary key")
+	entityCmd.Flags().BoolVar(&entityValidate, "validate", false, "add Jakarta validation annotations (@NotBlank, @NotNull)")
 	makeCmd.AddCommand(entityCmd)
 }
 
@@ -152,6 +159,7 @@ type entityData struct {
 	Auditing bool
 	Lombok   bool
 	UUID     bool
+	Validate bool
 	Fields   []entityField
 }
 
