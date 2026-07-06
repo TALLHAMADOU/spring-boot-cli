@@ -14,6 +14,7 @@ var (
 	dtoFields   string
 	dtoPackage  string
 	dtoValidate bool
+	dtoMapper   bool
 )
 
 var dtoCmd = &cobra.Command{
@@ -44,6 +45,22 @@ var dtoCmd = &cobra.Command{
 			return fmt.Errorf("écriture du fichier dto: %w", err)
 		}
 
+		if dtoMapper {
+			mapperDir := filepath.Join("src", "main", "java", filepath.Join(strings.Split(pkg, ".")...), "mapper")
+			if err := os.MkdirAll(mapperDir, 0o755); err != nil {
+				return fmt.Errorf("création des dossiers: %w", err)
+			}
+			mapperPath := filepath.Join(mapperDir, name+"Mapper.java")
+			mapperContent, err := renderTemplate("mapper", struct{ Pkg, Name string }{Pkg: pkg, Name: name})
+			if err != nil {
+				return fmt.Errorf("rendu du template mapper: %w", err)
+			}
+			if err := os.WriteFile(mapperPath, []byte(mapperContent), 0o644); err != nil {
+				return fmt.Errorf("écriture du fichier mapper: %w", err)
+			}
+			Success("Created mapper: %s\n", mapperPath)
+		}
+
 		Success("Created dto: %s\n", filePath)
 		return nil
 	},
@@ -53,5 +70,6 @@ func init() {
 	dtoCmd.Flags().StringVar(&dtoFields, "fields", "", "fields like name:String,age:int")
 	dtoCmd.Flags().StringVarP(&dtoPackage, "package", "p", "", "Override base package (ex: com.monentreprise.monprojet)")
 	dtoCmd.Flags().BoolVar(&dtoValidate, "validate", false, "add Jakarta validation annotations")
+	dtoCmd.Flags().BoolVar(&dtoMapper, "mapper", false, "generate a MapStruct mapper interface")
 	makeCmd.AddCommand(dtoCmd)
 }

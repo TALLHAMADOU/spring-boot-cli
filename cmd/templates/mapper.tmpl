@@ -1,0 +1,14 @@
+package {{.Pkg}}.mapper;
+
+import {{.Pkg}}.dto.{{.Name}}Dto;
+import {{.Pkg}}.entity.{{.Name}};
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface {{.Name}}Mapper {
+
+    {{.Name}}Dto toDto({{.Name}} entity);
+
+    {{.Name}} toEntity({{.Name}}Dto dto);
+}
