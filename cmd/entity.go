@@ -82,7 +82,7 @@ var entityCmd = &cobra.Command{
 		if strings.TrimSpace(entityFields) != "" {
 			for _, f := range parseFields(entityFields) {
 				imports = append(imports, f.importPkg...)
-				fields = append(fields, entityField{Type: f.goType, Name: f.name, Cap: exportName(f.name)})
+				fields = append(fields, entityField{Type: f.Type, Name: f.Name, Cap: exportName(f.Name)})
 			}
 		}
 

@@ -71,10 +71,10 @@ func ensureService(pkg, serviceName, entity string) error {
 		fields := readEntityFields(pkg, entity)
 		copyLines := ""
 		for _, f := range fields {
-			if f.name == "id" || f.name == "createdAt" || f.name == "updatedAt" {
+			if f.Name == "id" || f.Name == "createdAt" || f.Name == "updatedAt" {
 				continue
 			}
-			cap := exportName(f.name)
+			cap := exportName(f.Name)
 			copyLines += fmt.Sprintf("            existing.set%s(entity.get%s());\n", cap, cap)
 		}
 		if copyLines == "" {
